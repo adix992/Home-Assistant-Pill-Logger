@@ -1,0 +1,13 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Add a Medication",
+        "data": {
+          "medication_name": "Medication Name",
+          "initial_stock": "Initial Stock (How many pills do you currently have?)"
+        }
+      }
+    }
+  }
+}
