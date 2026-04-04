@@ -1,12 +1,10 @@
 {
   "domain": "pill_logger",
-  "name": "Integration blueprint",
+  "name": "Pill Logger",
   "codeowners": [
-    "@ludeeus"
+    "@adix992"
   ],
   "config_flow": true,
-  "documentation": "https://github.com/ludeeus/pill_logger",
-  "iot_class": "cloud_polling",
-  "issue_tracker": "https://github.com/ludeeus/pill_logger/issues",
+  "documentation": "https://github.com/adix992/Home-Assistant-Pill-Logger",
   "version": "0.1.0"
 }
