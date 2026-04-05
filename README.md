@@ -1,6 +1,4 @@
-***
 
-```markdown
 # 💊 Home Assistant Pill Logger
 
 A highly advanced, fully local medication tracking and reminder integration for Home Assistant. 
@@ -105,6 +103,3 @@ This repository includes a Blueprint that handles complex reminder loops. It sen
 
 ---
 *Disclaimer: This integration is for informational and home automation purposes only. It is not a certified medical device. Always follow the advice of your doctor and the instructions on your prescription.*
-```
-
-***
