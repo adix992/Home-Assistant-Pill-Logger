@@ -1,46 +1,87 @@
-# Notice
+# 💊 Home Assistant Pill Logger
 
-The component and platforms in this repository are not meant to be used by a
-user, but as a "blueprint" that custom component developers can build
-upon, to make more awesome stuff.
+A highly advanced, fully local medication tracking and reminder integration for Home Assistant. 
 
-HAVE FUN! 😎
+Unlike simple counters, Pill Logger is a full-scale health management system. It calculates rolling time windows, prevents accidental overdoses, tracks inventory with self-resetting smart inputs, and powers actionable mobile reminders.
 
-## Why?
+## ✨ Features
+* **Safe Dose Tracking:** Set limits (e.g., "Max 2 pills per 8 hours"). The integration calculates your rolling window and tells you exactly how many safe doses you have left.
+* **Overdose Blocker:** If you try to log a pill when you have 0 safe doses available, the integration blocks the action and throws a UI error.
+* **Smart Inventory:** Tracks your remaining pills. To refill, just type the new box amount into the native Home Assistant text box, and it automatically adds it to your total and resets to 0.
+* **Native Countdowns:** Outputs the exact `datetime` of your next available dose, allowing Home Assistant to natively show "Wait: 2 hours" or "Available now".
+* **Blueprint Included:** Comes with a pre-built Blueprint for actionable mobile notifications (Take, Skip, Snooze).
 
-This is simple, by having custom_components look (README + structure) the same
-it is easier for developers to help each other and for users to start using them.
+---
 
-If you are a developer and you want to add things to this "blueprint" that you think more
-developers will have use for, please open a PR to add it :)
+## 🛠️ Installation
 
-## What?
+### 1. Install via HACS (Recommended)
+1. Open HACS in your Home Assistant.
+2. Click the 3 dots in the top right -> **Custom repositories**.
+3. Paste the URL of this repository and select **Integration** as the category.
+4. Click **Download** and restart Home Assistant.
 
-This repository contains multiple files, here is a overview:
+### 2. Add your Medications
+1. Go to **Settings > Devices & Services > Add Integration**.
+2. Search for **Pill Logger**.
+3. Follow the multi-step setup to define your medication (Regular Interval vs. As Needed, dosages, and current stock).
+4. Repeat this for as many medications as you need!
 
-File | Purpose | Documentation
--- | -- | --
-`.devcontainer.json` | Used for development/testing with Visual Studio Code. | [Documentation](https://code.visualstudio.com/docs/remote/containers)
-`.github/ISSUE_TEMPLATE/*.yml` | Templates for the issue tracker | [Documentation](https://help.github.com/en/github/building-a-strong-community/configuring-issue-templates-for-your-repository)
-`custom_components/pill_logger/*` | Integration files, this is where everything happens. | [Documentation](https://developers.home-assistant.io/docs/creating_component_index)
-`CONTRIBUTING.md` | Guidelines on how to contribute. | [Documentation](https://help.github.com/en/github/building-a-strong-community/setting-guidelines-for-repository-contributors)
-`LICENSE` | The license file for the project. | [Documentation](https://help.github.com/en/github/creating-cloning-and-archiving-repositories/licensing-a-repository)
-`README.md` | The file you are reading now, should contain info about the integration, installation and configuration instructions. | [Documentation](https://help.github.com/en/github/writing-on-github/basic-writing-and-formatting-syntax)
-`requirements.txt` | Python packages used for development/lint/testing this integration. | [Documentation](https://pip.pypa.io/en/stable/user_guide/#requirements-files)
+---
 
-## How?
+## 📱 The Dashboard (UI)
 
-1. Create a new repository in GitHub, using this repository as a template by clicking the "Use this template" button in the GitHub UI.
-1. Open your new repository in Visual Studio Code devcontainer (Preferably with the "`Dev Containers: Clone Repository in Named Container Volume...`" option).
-1. Rename all instances of the `pill_logger` to `custom_components/<your_integration_domain>` (e.g. `custom_components/awesome_integration`).
-1. Rename all instances of the `Pill logger` to `<Your Integration Name>` (e.g. `Awesome Integration`).
-1. Run the `scripts/develop` to start HA and test out your new integration.
+To get a beautiful, app-like experience on your dashboard, you will need two popular frontend plugins installed via HACS:
+* [Mushroom Cards](https://github.com/piitaya/lovelace-mushroom)
+* [Vertical Stack In Card](https://github.com/ofekashery/vertical-stack-in-card)
 
-## Next steps
+Once those are installed, add a "Manual" card to your dashboard and paste this code. *(Just do a Find & Replace for `paracetamol` to match your medication's entity names!)*
 
-These are some next steps you may want to look into:
-- Add tests to your integration, [`pytest-homeassistant-custom-component`](https://github.com/MatthewFlamm/pytest-homeassistant-custom-component) can help you get started.
-- Add brand images (logo/icon).
-- Create your first release.
-- Share your integration on the [Home Assistant Forum](https://community.home-assistant.io/).
-- Submit your integration to [HACS](https://hacs.xyz/docs/publish/start).
+```yaml
+type: custom:vertical-stack-in-card
+cards:
+  # 1. The Header 
+  - type: custom:mushroom-template-card
+    entity: sensor.paracetamol_next_dose_time
+    primary: Paracetamol
+    secondary: >-
+      {% set next = states('sensor.paracetamol_next_dose_time') %}
+      {% if next in ['unknown', 'unavailable', 'None', ''] %}
+        Available now
+      {% elif next | as_datetime(None) != None and now() < next | as_datetime %}
+        Wait: {{ next | as_datetime | time_until(now()) }}
+      {% else %}
+        Available now
+      {% endif %}
+    icon: mdi:medical-bag
+    icon_color: blue
+    badge_icon: >-
+      {% if states('sensor.paracetamol_safe_doses_available') | int(0) > 0 %}
+        mdi:check
+      {% else %}
+        mdi:clock-outline
+      {% endif %}
+    badge_color: >-
+      {% if states('sensor.paracetamol_safe_doses_available') | int(0) > 0 %}
+        green
+      {% else %}
+        orange
+      {% endif %}
+      
+  # 2. The Interactive Buttons
+  - type: horizontal-stack
+    cards:
+      - type: custom:mushroom-entity-card
+        entity: button.take_paracetamol
+        name: Take Pill
+        layout: vertical
+        icon_color: blue
+        show_state: false
+      - type: custom:mushroom-entity-card
+        entity: sensor.paracetamol_safe_doses_available
+        name: Safe Doses
+        layout: vertical
+      - type: custom:mushroom-entity-card
+        entity: number.paracetamol_pills_left
+        name: Inventory left
+        layout: vertical
