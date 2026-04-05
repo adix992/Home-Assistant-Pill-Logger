@@ -43,10 +43,10 @@ type: custom:vertical-stack-in-card
 cards:
   # 1. The Header 
   - type: custom:mushroom-template-card
-    entity: sensor.paracetamol_next_dose_time
-    primary: Paracetamol
+    entity: sensor.YOUR_MEDICATION_next_dose
+    primary: Medication Name
     secondary: >-
-      {% set next = states('sensor.paracetamol_next_dose_time') %}
+      {% set next = states('sensor.YOUR_MEDICATION_next_dose') %}
       {% if next in ['unknown', 'unavailable', 'None', ''] %}
         Available now
       {% elif next | as_datetime(None) != None and now() < next | as_datetime %}
@@ -57,13 +57,13 @@ cards:
     icon: mdi:medical-bag
     icon_color: blue
     badge_icon: >-
-      {% if states('sensor.paracetamol_safe_doses_available') | int(0) > 0 %}
+      {% if states('sensor.YOUR_MEDICATION_safe_doses') | int(0) > 0 %}
         mdi:check
       {% else %}
         mdi:clock-outline
       {% endif %}
     badge_color: >-
-      {% if states('sensor.paracetamol_safe_doses_available') | int(0) > 0 %}
+      {% if states('sensor.YOUR_MEDICATION_safe_doses') | int(0) > 0 %}
         green
       {% else %}
         orange
@@ -72,18 +72,54 @@ cards:
   # 2. The Interactive Buttons
   - type: horizontal-stack
     cards:
+      # --- BUTTON STATE A: Safe to take ---
+      - type: conditional
+        conditions:
+          - condition: numeric_state
+            entity: sensor.YOUR_MEDICATION_safe_doses
+            above: 0
+        card:
+          type: custom:mushroom-entity-card
+          entity: button.take_YOUR_MEDICATION
+          name: Take Pill
+          layout: vertical
+          icon_color: blue
+          show_state: false
+          tap_action:
+            action: call-service
+            service: button.press
+            target:
+              entity_id: button.take_YOUR_MEDICATION
+              
+      # --- BUTTON STATE B: 0 Doses Left (WARNING!) ---
+      - type: conditional
+        conditions:
+          - condition: numeric_state
+            entity: sensor.YOUR_MEDICATION_safe_doses
+            below: 1
+        card:
+          type: custom:mushroom-entity-card
+          entity: button.take_YOUR_MEDICATION
+          name: LIMIT REACHED
+          layout: vertical
+          icon_color: red
+          icon: mdi:alert
+          show_state: false
+          tap_action:
+            action: call-service
+            service: button.press
+            target:
+              entity_id: button.take_YOUR_MEDICATION
+            confirmation:
+              text: "WARNING: You have 0 safe doses available. Are you sure you want to take this pill anyway?"
+              
+      # --- The Stats ---
       - type: custom:mushroom-entity-card
-        entity: button.take_paracetamol
-        name: Take Pill
-        layout: vertical
-        icon_color: blue
-        show_state: false
-      - type: custom:mushroom-entity-card
-        entity: sensor.paracetamol_safe_doses_available
+        entity: sensor.YOUR_MEDICATION_safe_doses
         name: Safe Doses
         layout: vertical
       - type: custom:mushroom-entity-card
-        entity: number.paracetamol_pills_left
+        entity: number.YOUR_MEDICATION_pills_left
         name: Inventory left
         layout: vertical
 ```
