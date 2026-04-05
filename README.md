@@ -45,7 +45,7 @@ cards:
   # 1. The Header 
   - type: custom:mushroom-template-card
     entity: sensor.YOUR_MEDICATION_next_dose
-    primary: Medication Name
+    primary: YOUR_MEDICATION
     secondary: >-
       {% set next = states('sensor.YOUR_MEDICATION_next_dose') %}
       {% if next in ['unknown', 'unavailable', 'None', ''] %}
