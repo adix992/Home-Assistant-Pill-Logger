@@ -25,6 +25,9 @@ class PillTotalSensor(RestoreSensor):
         self.async_on_remove(
             async_dispatcher_connect(self.hass, f"pill_taken_{self._entry_id}", self.increment)
         )
+        self.async_on_remove(
+            async_dispatcher_connect(self.hass, f"pill_reset_{self._entry_id}", self.reset_data)
+        )
         last_state = await self.async_get_last_sensor_data()
         if last_state and last_state.native_value is not None:
             self._state = int(last_state.native_value)
@@ -35,6 +38,10 @@ class PillTotalSensor(RestoreSensor):
 
     def increment(self):
         self._state += 1
+        self.async_write_ha_state()
+
+    def reset_data(self):
+        self._state = 0
         self.async_write_ha_state()
 
 class PillSafeDosesSensor(RestoreSensor):
@@ -57,6 +64,9 @@ class PillSafeDosesSensor(RestoreSensor):
         self.async_on_remove(
             async_dispatcher_connect(self.hass, f"pill_taken_{self._entry_id}", self.pill_taken)
         )
+        self.async_on_remove(
+            async_dispatcher_connect(self.hass, f"pill_reset_{self._entry_id}", self.reset_data)
+        )
             
         last_state_obj = await self.async_get_last_state()
         if last_state_obj and "timestamps" in last_state_obj.attributes:
@@ -69,6 +79,11 @@ class PillSafeDosesSensor(RestoreSensor):
 
     def pill_taken(self):
         self._timestamps.append(dt_util.now())
+        self._update_state()
+        self.async_write_ha_state()
+
+    def reset_data(self):
+        self._timestamps = []
         self._update_state()
         self.async_write_ha_state()
 
@@ -110,6 +125,9 @@ class PillNextDoseSensor(RestoreSensor):
         self.async_on_remove(
             async_dispatcher_connect(self.hass, f"pill_taken_{self._entry_id}", self.pill_taken)
         )
+        self.async_on_remove(
+            async_dispatcher_connect(self.hass, f"pill_reset_{self._entry_id}", self.reset_data)
+        )
             
         last_state_obj = await self.async_get_last_state()
         if last_state_obj and "timestamps" in last_state_obj.attributes:
@@ -122,6 +140,11 @@ class PillNextDoseSensor(RestoreSensor):
 
     def pill_taken(self):
         self._timestamps.append(dt_util.now())
+        self._update_state()
+        self.async_write_ha_state()
+
+    def reset_data(self):
+        self._timestamps = []
         self._update_state()
         self.async_write_ha_state()
 
