@@ -1,15 +1,16 @@
-
 # 💊 Home Assistant Pill Logger
 
 A highly advanced, fully local medication tracking and reminder integration for Home Assistant. 
 
-Unlike simple counters, Pill Logger is a full-scale health management system. It calculates rolling time windows, prevents accidental overdoses, tracks inventory with self-resetting smart inputs, and powers actionable mobile reminders.
+Unlike simple counters, Pill Logger is a full-scale health management system. It calculates rolling time windows, warns against accidental overdoses, tracks inventory with self-resetting smart inputs, and powers actionable mobile reminders.
 
 ## ✨ Features
+* **Dynamic Scheduling:** Supports tracking medications via "Regular Interval" (e.g. every 8 hours), "Time of Day" (e.g. daily at 08:30), or purely "As Needed". 
 * **Safe Dose Tracking:** Set limits (e.g., "Max 2 pills per 8 hours"). The integration calculates your rolling window and tells you exactly how many safe doses you have left.
-* **Overdose Blocker:** If you try to log a pill when you have 0 safe doses available, the integration blocks the action and throws a UI error.
-* **Smart Inventory:** Tracks your remaining pills. To refill, just type the new box amount into the native Home Assistant text box, and it automatically adds it to your total and resets to 0.
-* **Native Countdowns:** Outputs the exact `datetime` of your next available dose, allowing Home Assistant to natively show "Wait: 2 hours" or "Available now".
+* **Smart Overdose Warning:** Dashboard UI dynamically swaps to a red warning button when safe doses reach 0, prompting an "Are you sure?" dialog before allowing an override.
+* **Smart Inventory:** Tracks your remaining pills. To refill, double-tap the inventory card, type the new box amount into the native Home Assistant text box, and it automatically adds it to your total and resets to 0.
+* **Native Countdowns:** Outputs the exact `datetime` of your next available dose, allowing Home Assistant to natively show live-ticking countdowns like "Wait: 2 hours" or "Available now".
+* **Built-in Reset:** Includes a dedicated configuration button to wipe a medication's history and start fresh without losing your current inventory counts.
 * **Blueprint Included:** Comes with a pre-built Blueprint for actionable mobile notifications (Take, Skip, Snooze).
 
 ---
@@ -25,24 +26,26 @@ Unlike simple counters, Pill Logger is a full-scale health management system. It
 ### 2. Add your Medications
 1. Go to **Settings > Devices & Services > Add Integration**.
 2. Search for **Pill Logger**.
-3. Follow the multi-step setup to define your medication (Regular Interval vs. As Needed, dosages, and current stock).
-4. Repeat this for as many medications as you need!
+3. Follow the multi-step setup to define your medication (Regular Interval vs. Time of Day vs. As Needed, dosages, and current stock).
+4. Repeat this for as many medications as you need! All entities will be neatly grouped into a single Device per medication.
 
 ---
 
 ## 📱 The Dashboard (UI)
 
-To get a beautiful, app-like experience on your dashboard, you will need two popular frontend plugins installed via HACS:
+To get a beautiful, app-like experience on your dashboard, you will need three popular frontend plugins installed via HACS:
 * [Mushroom Cards](https://github.com/piitaya/lovelace-mushroom)
 * [Vertical Stack In Card](https://github.com/ofekashery/vertical-stack-in-card)
+* [Card-Mod](https://github.com/thomasloven/lovelace-card-mod)
 
-Once those are installed, add a "Manual" card to your dashboard and paste this code. *(Just do a Find & Replace for `YOUR_MEDICATION` to match your medication's entity names!)*
-How to refill: Double click inventory to open the refill dialouge, enter a number and close it again to refill
+Once those are installed, add a "Manual" card to your dashboard and paste this code. *(Just do a Find & Replace for `YOUR_MEDICATION` to match your medication's entity name!)*
+
+**💡 How to refill:** Double-click the "Inventory Left" box to open the refill dialog, enter the new box amount, and close it to instantly add to your inventory.
 
 ```yaml
 type: custom:vertical-stack-in-card
 cards:
-  # 1. The Header 
+  # 1. The Header
   - type: custom:mushroom-template-card
     entity: sensor.YOUR_MEDICATION_next_dose
     primary: Medication Name
@@ -55,7 +58,8 @@ cards:
       {% else %}
         Available now
       {% endif %}
-    color: blue
+    icon: mdi:medical-bag
+    icon_color: blue
     badge_icon: >-
       {% set safe = states('sensor.YOUR_MEDICATION_safe_doses') %}
       {% if safe == '0' %}
@@ -75,7 +79,7 @@ cards:
         ha-card {
           zoom: 1.1;
         }
-      
+        
   # 2. The Interactive Buttons
   - type: horizontal-stack
     cards:
@@ -146,13 +150,14 @@ cards:
           type: custom:mushroom-entity-card
           entity: sensor.YOUR_MEDICATION_safe_doses
           name: Safe Doses
-        
+          
       # --- Hidden Refill Input (Disguised as Inventory) ---
       - type: custom:mushroom-template-card
         entity: number.add_YOUR_MEDICATION_refill
         primary: Inventory Left
         secondary: "{{ states('number.YOUR_MEDICATION_pills_left') }}"
         icon: mdi:medical-bag
+        icon_color: blue
         tap_action:
           action: none
         double_tap_action:
@@ -163,7 +168,7 @@ cards:
 
 ## ⏰ Smart Reminders (Blueprint)
 
-This repository includes a Blueprint that handles complex reminder loops. It sends an actionable notification to your phone. If you click "Take", it logs the pill natively. If you ignore it, it snoozes and loops.
+This repository includes a Blueprint that handles complex reminder loops. It sends an actionable notification to your phone. If you click "Take Now", it logs the pill natively. If you ignore it, it snoozes and loops.
 
 **To install the Blueprint:**
 1. Go to **Settings > Automations > Blueprints**.
