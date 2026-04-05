@@ -1,3 +1,6 @@
+***
+
+```markdown
 # 💊 Home Assistant Pill Logger
 
 A highly advanced, fully local medication tracking and reminder integration for Home Assistant. 
@@ -87,17 +90,21 @@ cards:
         layout: vertical
 ```
 
-⏰ Smart Reminders (Blueprint)
+---
+
+## ⏰ Smart Reminders (Blueprint)
+
 This repository includes a Blueprint that handles complex reminder loops. It sends an actionable notification to your phone. If you click "Take", it logs the pill natively. If you ignore it, it snoozes and loops.
 
-To install the Blueprint:
+**To install the Blueprint:**
+1. Go to **Settings > Automations > Blueprints**.
+2. Click **Import Blueprint** in the bottom right.
+3. Paste the URL to the blueprint file in this repository:
+   `https://raw.githubusercontent.com/YOUR_GITHUB_NAME/Home-Assistant-Pill-Logger/main/blueprints/reminder.yaml`
+4. Create a new automation using the blueprint, select your phone, and map your Pill Logger entities!
 
-Go to Settings > Automations > Blueprints.
-Click Import Blueprint in the bottom right.
-Paste the URL to the blueprint file in this repository:
-https://raw.githubusercontent.com/YOUR_GITHUB_NAME/Home-Assistant-Pill-Logger/main/blueprints/reminder.yaml
-Create a new automation using the blueprint, select your phone, and map your Pill Logger entities!
+---
+*Disclaimer: This integration is for informational and home automation purposes only. It is not a certified medical device. Always follow the advice of your doctor and the instructions on your prescription.*
+```
 
-
-
-Disclaimer: This integration is for informational and home automation purposes only. It is not a certified medical device. Always follow the advice of your doctor and the instructions on your prescription.
+***
