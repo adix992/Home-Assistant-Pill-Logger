@@ -99,6 +99,7 @@ class PillNextDoseSensor(RestoreSensor):
         self._hours_between_doses = entry.data.get("hours_between_doses", 0)
         self._max_pills = entry.data.get("max_pills_allowed", 0)
         self._time_window = entry.data.get("time_window_hours", 0)
+        self._time_of_day = entry.data.get("time_of_day")
         
         self._timestamps = []
         self._attr_extra_state_attributes = {"timestamps": []}
@@ -132,7 +133,25 @@ class PillNextDoseSensor(RestoreSensor):
                 last_ts = self._timestamps[-1]
                 self._attr_native_value = last_ts + timedelta(hours=self._hours_between_doses)
             else:
-                self._attr_native_value = None
+                self._attr_native_value = now
+        elif self._tracking_type == "Time of Day":
+            if self._time_of_day:
+                try:
+                    target_hour, target_minute = map(int, self._time_of_day.split(":"))
+                except ValueError:
+                    target_hour, target_minute = 8, 0
+                
+                target_today = now.replace(hour=target_hour, minute=target_minute, second=0, microsecond=0)
+                
+                if self._timestamps:
+                    last_ts = self._timestamps[-1]
+                    # Check if the last_ts is on the same calendar day in local time
+                    if last_ts.date() == now.date():
+                        self._attr_native_value = target_today + timedelta(days=1)
+                    else:
+                        self._attr_native_value = target_today
+                else:
+                    self._attr_native_value = target_today
         elif self._tracking_type == "As Needed":
             cutoff = now - timedelta(hours=self._time_window)
             self._timestamps = [ts for ts in self._timestamps if ts >= cutoff]
