@@ -45,7 +45,7 @@ cards:
   # 1. The Header 
   - type: custom:mushroom-template-card
     entity: sensor.YOUR_MEDICATION_next_dose
-    primary: YOUR_MEDICATION
+    primary: Medication Name
     secondary: >-
       {% set next = states('sensor.YOUR_MEDICATION_next_dose') %}
       {% if next in ['unknown', 'unavailable', 'None', ''] %}
@@ -58,22 +58,30 @@ cards:
     icon: mdi:medical-bag
     icon_color: blue
     badge_icon: >-
-      {% if states('sensor.YOUR_MEDICATION_safe_doses') | int(0) > 0 %}
-        mdi:check
-      {% else %}
+      {% set safe = states('sensor.YOUR_MEDICATION_safe_doses') %}
+      {% if safe == '0' %}
         mdi:clock-outline
+      {% elif safe | int(-1) > 0 %}
+        mdi:check
       {% endif %}
     badge_color: >-
-      {% if states('sensor.YOUR_MEDICATION_safe_doses') | int(0) > 0 %}
-        green
-      {% else %}
+      {% set safe = states('sensor.YOUR_MEDICATION_safe_doses') %}
+      {% if safe == '0' %}
         orange
+      {% elif safe | int(-1) > 0 %}
+        green
       {% endif %}
+    card_mod:
+      style: |
+        ha-card {
+          --card-primary-font-size: 22px;
+          --card-primary-font-weight: bold;
+        }
       
   # 2. The Interactive Buttons
   - type: horizontal-stack
     cards:
-      # --- BUTTON STATE A: Safe to take ---
+      # --- BUTTON STATE A1: Safe to take (Has Doses) ---
       - type: conditional
         conditions:
           - condition: numeric_state
@@ -83,7 +91,24 @@ cards:
           type: custom:mushroom-entity-card
           entity: button.take_YOUR_MEDICATION
           name: Take Pill
-          layout: vertical
+          icon_color: blue
+          show_state: false
+          tap_action:
+            action: call-service
+            service: button.press
+            target:
+              entity_id: button.take_YOUR_MEDICATION
+              
+      # --- BUTTON STATE A2: Safe to take (Scheduled Pill / Unknown Limit) ---
+      - type: conditional
+        conditions:
+          - condition: state
+            entity: sensor.YOUR_MEDICATION_safe_doses
+            state: "unknown"
+        card:
+          type: custom:mushroom-entity-card
+          entity: button.take_YOUR_MEDICATION
+          name: Take Pill
           icon_color: blue
           show_state: false
           tap_action:
@@ -102,7 +127,6 @@ cards:
           type: custom:mushroom-entity-card
           entity: button.take_YOUR_MEDICATION
           name: LIMIT REACHED
-          layout: vertical
           icon_color: red
           icon: mdi:alert
           show_state: false
@@ -114,11 +138,16 @@ cards:
             confirmation:
               text: "WARNING: You have 0 safe doses available. Are you sure you want to take this pill anyway?"
               
-      # --- The Stats ---
-      - type: custom:mushroom-entity-card
-        entity: sensor.YOUR_MEDICATION_safe_doses
-        name: Safe Doses
-        layout: vertical
+      # --- The Stats (Hides if Unknown) ---
+      - type: conditional
+        conditions:
+          - condition: numeric_state
+            entity: sensor.YOUR_MEDICATION_safe_doses
+            above: -1
+        card:
+          type: custom:mushroom-entity-card
+          entity: sensor.YOUR_MEDICATION_safe_doses
+          name: Safe Doses
         
       # --- Hidden Refill Input (Disguised as Inventory) ---
       - type: custom:mushroom-template-card
@@ -126,7 +155,6 @@ cards:
         primary: Inventory Left
         secondary: "{{ states('number.YOUR_MEDICATION_pills_left') }}"
         icon: mdi:medical-bag
-        layout: vertical
         tap_action:
           action: none
         double_tap_action:
