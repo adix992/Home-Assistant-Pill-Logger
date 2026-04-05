@@ -37,39 +37,43 @@ To get a beautiful, app-like experience on your dashboard, you will need two pop
 * [Vertical Stack In Card](https://github.com/ofekashery/vertical-stack-in-card)
 
 Once those are installed, add a "Manual" card to your dashboard and paste this code. *(Just do a Find & Replace for `YOUR_MEDICATION` to match your medication's entity names!)*
+How to refill: Double click inventory to open the refill dialouge, enter a number and close it again to refill
 
 ```yaml
 type: custom:vertical-stack-in-card
 cards:
-  # 1. The Header 
-  - type: custom:mushroom-template-card
-    entity: sensor.YOUR_MEDICATION_next_dose
-    primary: Medication Name
-    secondary: >-
-      {% set next = states('sensor.YOUR_MEDICATION_next_dose') %}
-      {% if next in ['unknown', 'unavailable', 'None', ''] %}
-        Available now
-      {% elif next | as_datetime(None) != None and now() < next | as_datetime %}
-        Wait: {{ next | as_datetime | time_until(now()) }}
-      {% else %}
-        Available now
-      {% endif %}
-    icon: mdi:medical-bag
-    icon_color: blue
-    badge_icon: >-
-      {% if states('sensor.YOUR_MEDICATION_safe_doses') | int(0) > 0 %}
-        mdi:check
-      {% else %}
-        mdi:clock-outline
-      {% endif %}
-    badge_color: >-
-      {% if states('sensor.YOUR_MEDICATION_safe_doses') | int(0) > 0 %}
-        green
-      {% else %}
-        orange
-      {% endif %}
-      
-  # 2. The Interactive Buttons
+  # 1. THE HEADER (Markdown - Ticks in real-time in the browser!)
+  - type: markdown
+    card_mod:
+      style: |
+        ha-card { box-shadow: none; background: none; border: none; padding-bottom: 0px; }
+    content: >
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <div style="font-size: 20px; font-weight: bold; letter-spacing: 0.1px;">Medication Name</div>
+        <div style="font-size: 14px; color: var(--secondary-text-color);">
+          {% if states('sensor.YOUR_MEDICATION_safe_doses') | int(0) > 0 %}
+            ✅ Safe
+          {% else %}
+            🕒 Waiting
+          {% endif %}
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; font-size: 18px; color: var(--secondary-text-color);">
+        <ha-icon icon="mdi:medical-bag" style="margin-right: 6px; color: var(--blue-color);"></ha-icon>
+        <div>
+          {% set next = states('sensor.YOUR_MEDICATION_next_dose') %}
+          {% if next in ['unknown', 'unavailable', 'None', ''] %}
+            Available now
+          {% elif next | as_datetime(None) != None and now() < next | as_datetime %}
+            Wait: <ha-relative-time datetime="{{ next }}"></ha-relative-time>
+          {% else %}
+            Available now
+          {% endif %}
+        </div>
+      </div>
+
+  # 2. THE BUTTONS (Mushroom - Instant local control)
   - type: horizontal-stack
     cards:
       # --- BUTTON STATE A: Safe to take ---
@@ -118,10 +122,18 @@ cards:
         entity: sensor.YOUR_MEDICATION_safe_doses
         name: Safe Doses
         layout: vertical
-      - type: custom:mushroom-entity-card
-        entity: number.YOUR_MEDICATION_pills_left
-        name: Inventory left
+        
+      # --- Hidden Refill Input (Disguised as Inventory) ---
+      - type: custom:mushroom-template-card
+        entity: number.add_YOUR_MEDICATION_refill
+        primary: Inventory Left
+        secondary: "{{ states('number.YOUR_MEDICATION_pills_left') }}"
+        icon: mdi:medical-bag
         layout: vertical
+        tap_action:
+          action: none
+        double_tap_action:
+          action: more-info
 ```
 
 ---
