@@ -55,8 +55,7 @@ cards:
       {% else %}
         Available now
       {% endif %}
-    icon: mdi:medical-bag
-    icon_color: blue
+    color: blue
     badge_icon: >-
       {% set safe = states('sensor.YOUR_MEDICATION_safe_doses') %}
       {% if safe == '0' %}
@@ -74,8 +73,7 @@ cards:
     card_mod:
       style: |
         ha-card {
-          --card-primary-font-size: 22px;
-          --card-primary-font-weight: bold;
+          zoom: 1.1;
         }
       
   # 2. The Interactive Buttons
