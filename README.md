@@ -85,3 +85,19 @@ cards:
         entity: number.paracetamol_pills_left
         name: Inventory left
         layout: vertical
+```
+
+⏰ Smart Reminders (Blueprint)
+This repository includes a Blueprint that handles complex reminder loops. It sends an actionable notification to your phone. If you click "Take", it logs the pill natively. If you ignore it, it snoozes and loops.
+
+To install the Blueprint:
+
+Go to Settings > Automations > Blueprints.
+Click Import Blueprint in the bottom right.
+Paste the URL to the blueprint file in this repository:
+https://raw.githubusercontent.com/YOUR_GITHUB_NAME/Home-Assistant-Pill-Logger/main/blueprints/reminder.yaml
+Create a new automation using the blueprint, select your phone, and map your Pill Logger entities!
+
+
+
+Disclaimer: This integration is for informational and home automation purposes only. It is not a certified medical device. Always follow the advice of your doctor and the instructions on your prescription.
