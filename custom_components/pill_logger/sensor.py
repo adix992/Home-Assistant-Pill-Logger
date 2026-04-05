@@ -2,6 +2,7 @@ from datetime import timedelta
 from homeassistant.components.sensor import RestoreSensor, SensorDeviceClass
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
+from homeassistant.helpers.device_registry import DeviceInfo
 import homeassistant.util.dt as dt_util
 from .const import DOMAIN
 
@@ -14,11 +15,20 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities):
 
 class PillTotalSensor(RestoreSensor):
     def __init__(self, name, entry_id):
+        self._med_name = name
         self._attr_name = f"{name} Total Doses"
         self._attr_unique_id = f"{entry_id}_total"
         self._attr_icon = "mdi:chart-line"
         self._entry_id = entry_id
         self._state = 0
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        return DeviceInfo(
+            identifiers={(DOMAIN, self._entry_id)},
+            name=self._med_name,
+            manufacturer="Pill Logger",
+        )
 
     async def async_added_to_hass(self):
         await super().async_added_to_hass()
@@ -47,6 +57,7 @@ class PillTotalSensor(RestoreSensor):
 class PillSafeDosesSensor(RestoreSensor):
     def __init__(self, entry):
         med_name = entry.data["medication_name"]
+        self._med_name = med_name
         self._attr_name = f"{med_name} Safe Doses"
         self._attr_unique_id = f"{entry.entry_id}_safe_doses"
         self._attr_icon = "mdi:pill"
@@ -87,6 +98,14 @@ class PillSafeDosesSensor(RestoreSensor):
         self._update_state()
         self.async_write_ha_state()
 
+    @property
+    def device_info(self) -> DeviceInfo:
+        return DeviceInfo(
+            identifiers={(DOMAIN, self._entry_id)},
+            name=self._med_name,
+            manufacturer="Pill Logger",
+        )
+
     def _update_state(self):
         now = dt_util.now()
         
@@ -106,6 +125,7 @@ class PillSafeDosesSensor(RestoreSensor):
 class PillNextDoseSensor(RestoreSensor):
     def __init__(self, entry):
         med_name = entry.data["medication_name"]
+        self._med_name = med_name
         self._attr_name = f"{med_name} Next Dose"
         self._attr_unique_id = f"{entry.entry_id}_next_dose"
         self._attr_device_class = SensorDeviceClass.TIMESTAMP
@@ -147,6 +167,14 @@ class PillNextDoseSensor(RestoreSensor):
         self._timestamps = []
         self._update_state()
         self.async_write_ha_state()
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        return DeviceInfo(
+            identifiers={(DOMAIN, self._entry_id)},
+            name=self._med_name,
+            manufacturer="Pill Logger",
+        )
 
     def _update_state(self):
         now = dt_util.now()
