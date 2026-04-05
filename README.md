@@ -36,7 +36,7 @@ To get a beautiful, app-like experience on your dashboard, you will need two pop
 * [Mushroom Cards](https://github.com/piitaya/lovelace-mushroom)
 * [Vertical Stack In Card](https://github.com/ofekashery/vertical-stack-in-card)
 
-Once those are installed, add a "Manual" card to your dashboard and paste this code. *(Just do a Find & Replace for `paracetamol` to match your medication's entity names!)*
+Once those are installed, add a "Manual" card to your dashboard and paste this code. *(Just do a Find & Replace for `YOUR_MEDICATION` to match your medication's entity names!)*
 
 ```yaml
 type: custom:vertical-stack-in-card
