@@ -169,7 +169,7 @@ This repository includes a Blueprint that handles complex reminder loops. It sen
 1. Go to **Settings > Automations > Blueprints**.
 2. Click **Import Blueprint** in the bottom right.
 3. Paste the URL to the blueprint file in this repository:
-   `https://raw.githubusercontent.com/YOUR_GITHUB_NAME/Home-Assistant-Pill-Logger/main/blueprints/reminder.yaml`
+   `https://raw.githubusercontent.com/adix992/Home-Assistant-Pill-Logger/main/blueprints/reminder.yaml`
 4. Create a new automation using the blueprint, select your phone, and map your Pill Logger entities!
 
 ---
