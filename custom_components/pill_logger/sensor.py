@@ -68,7 +68,8 @@ class PillSafeDosesSensor(RestoreSensor):
         self._entry_id = entry.entry_id
         self._tracking_type = entry.data.get("tracking_type")
         self._max_pills = entry.data.get("safe_doses", entry.data.get("max_pills_allowed", 1))
-        self._time_window = entry.data.get("time_window_hours", 0)  
+        self._time_window = entry.data.get("time_window_hours", 0)
+        self._time_of_day = entry.data.get("time_of_day")
         self._timestamps = []
         self._attr_extra_state_attributes = {"timestamps": []}
         self._attr_native_value = None  
@@ -142,13 +143,28 @@ class PillSafeDosesSensor(RestoreSensor):
             else:
                 self._attr_native_value = self._max_pills
         elif self._tracking_type == "Time of Day":
-            # Set native_value to 0 if a pill has already been taken on the current calendar day
             if self._timestamps:
                 last_ts = self._timestamps[-1]
-                if last_ts.date() == now.date():
-                    self._attr_native_value = 0
+                
+                if self._time_of_day:
+                    try:
+                        target_hour, target_minute = map(int, self._time_of_day.split(":"))
+                    except ValueError:
+                        target_hour, target_minute = 8, 0  
+                    
+                    # The safe dose becomes available on the day after the last pill was taken, at the target time.
+                    # This ensures that Safe Doses is 0 until the expected next dose time passes.
+                    release_time = last_ts.replace(hour=target_hour, minute=target_minute, second=0, microsecond=0) + timedelta(days=1)
+                        
+                    if now >= release_time:
+                        self._attr_native_value = self._max_pills
+                    else:
+                        self._attr_native_value = 0
                 else:
-                    self._attr_native_value = self._max_pills
+                    if last_ts.date() == now.date():
+                        self._attr_native_value = 0
+                    else:
+                        self._attr_native_value = self._max_pills
             else:
                 self._attr_native_value = self._max_pills
             
