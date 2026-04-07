@@ -1,6 +1,6 @@
 from datetime import timedelta
 from homeassistant.components.sensor import RestoreSensor, SensorDeviceClass
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.event import async_track_time_interval
@@ -47,10 +47,12 @@ class PillTotalSensor(RestoreSensor):
     def native_value(self):
         return self._state  
 
+    @callback
     def increment(self, *args, **kwargs):
         self._state += 1
         self.async_write_ha_state()
 
+    @callback
     def reset_data(self, *args, **kwargs):
         self._state = 0
         self.async_write_ha_state()  
@@ -96,16 +98,19 @@ class PillSafeDosesSensor(RestoreSensor):
                     self._timestamps.append(dt)
             self._update_state()  
 
+    @callback
     def _on_interval(self, now):
         """Callback to execute mathematical update each minute."""
         self._update_state()
         self.async_write_ha_state()
 
+    @callback
     def pill_taken(self, *args, **kwargs):
         self._timestamps.append(dt_util.now())
         self._update_state()
         self.async_write_ha_state()
 
+    @callback
     def reset_data(self, *args, **kwargs):
         self._timestamps = []
         self._update_state()
@@ -198,16 +203,19 @@ class PillNextDoseSensor(RestoreSensor):
                     self._timestamps.append(dt)
             self._update_state()  
 
+    @callback
     def _on_interval(self, now):
         """Callback to execute mathematical update each minute."""
         self._update_state()
         self.async_write_ha_state()
 
+    @callback
     def pill_taken(self, *args, **kwargs):
         self._timestamps.append(dt_util.now())
         self._update_state()
         self.async_write_ha_state()
 
+    @callback
     def reset_data(self, *args, **kwargs):
         self._timestamps = []
         self._update_state()

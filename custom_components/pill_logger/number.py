@@ -1,6 +1,6 @@
 import asyncio
 from homeassistant.components.number import RestoreNumber, NumberEntity, NumberMode
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect, async_dispatcher_send
 from homeassistant.helpers.device_registry import DeviceInfo
 from .const import DOMAIN
@@ -50,11 +50,13 @@ class PillStockNumber(RestoreNumber):
         self._attr_native_value = value
         self.async_write_ha_state()
 
+    @callback
     def decrement(self, *args, **kwargs):
         if self._attr_native_value > 0:
             self._attr_native_value -= 1
             self.async_write_ha_state()
 
+    @callback
     def add_stock(self, amount: float, *args, **kwargs):
         self._attr_native_value += amount
         self.async_write_ha_state()
