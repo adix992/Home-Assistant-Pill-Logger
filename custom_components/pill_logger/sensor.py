@@ -3,15 +3,16 @@ from homeassistant.components.sensor import RestoreSensor, SensorDeviceClass
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.event import async_track_time_interval
 import homeassistant.util.dt as dt_util
-from .const import DOMAIN
+from .const import DOMAIN  
 
 async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities):
     med_name = entry.data["medication_name"]
     entities = [PillTotalSensor(med_name, entry.entry_id)]
     entities.append(PillSafeDosesSensor(entry))
     entities.append(PillNextDoseSensor(entry))
-    async_add_entities(entities)
+    async_add_entities(entities)  
 
 class PillTotalSensor(RestoreSensor):
     def __init__(self, name, entry_id):
@@ -20,7 +21,7 @@ class PillTotalSensor(RestoreSensor):
         self._attr_unique_id = f"{entry_id}_total"
         self._attr_icon = "mdi:chart-line"
         self._entry_id = entry_id
-        self._state = 0
+        self._state = 0  
 
     @property
     def device_info(self) -> DeviceInfo:
@@ -28,7 +29,7 @@ class PillTotalSensor(RestoreSensor):
             identifiers={(DOMAIN, self._entry_id)},
             name=self._med_name,
             manufacturer="Pill Logger",
-        )
+        )  
 
     async def async_added_to_hass(self):
         await super().async_added_to_hass()
@@ -40,19 +41,20 @@ class PillTotalSensor(RestoreSensor):
         )
         last_state = await self.async_get_last_sensor_data()
         if last_state and last_state.native_value is not None:
-            self._state = int(last_state.native_value)
+            self._state = int(last_state.native_value)  
 
     @property
     def native_value(self):
-        return self._state
+        return self._state  
 
     def increment(self):
         self._state += 1
-        self.async_write_ha_state()
+        self.async_write_ha_state()  
 
     def reset_data(self):
         self._state = 0
-        self.async_write_ha_state()
+        self.async_write_ha_state()  
+
 
 class PillSafeDosesSensor(RestoreSensor):
     def __init__(self, entry):
@@ -64,11 +66,10 @@ class PillSafeDosesSensor(RestoreSensor):
         self._entry_id = entry.entry_id
         self._tracking_type = entry.data.get("tracking_type")
         self._max_pills = entry.data.get("max_pills_allowed", 0)
-        self._time_window = entry.data.get("time_window_hours", 0)
-        
+        self._time_window = entry.data.get("time_window_hours", 0)  
         self._timestamps = []
         self._attr_extra_state_attributes = {"timestamps": []}
-        self._attr_native_value = None
+        self._attr_native_value = None  
 
     async def async_added_to_hass(self):
         await super().async_added_to_hass()
@@ -78,7 +79,14 @@ class PillSafeDosesSensor(RestoreSensor):
         self.async_on_remove(
             async_dispatcher_connect(self.hass, f"pill_reset_{self._entry_id}", self.reset_data)
         )
-            
+        
+        # Track time passage to prune array and update state every minute
+        self.async_on_remove(
+            async_track_time_interval(
+                self.hass, self._on_interval, timedelta(minutes=1)
+            )
+        )
+
         last_state_obj = await self.async_get_last_state()
         if last_state_obj and "timestamps" in last_state_obj.attributes:
             saved_timestamps = last_state_obj.attributes["timestamps"]
@@ -86,17 +94,22 @@ class PillSafeDosesSensor(RestoreSensor):
                 dt = dt_util.parse_datetime(ts_str)
                 if dt:
                     self._timestamps.append(dt)
+            self._update_state()  
+
+    def _on_interval(self, now):
+        """Callback to execute mathematical update each minute."""
         self._update_state()
+        self.async_write_ha_state()
 
     def pill_taken(self):
         self._timestamps.append(dt_util.now())
         self._update_state()
-        self.async_write_ha_state()
+        self.async_write_ha_state()  
 
     def reset_data(self):
         self._timestamps = []
         self._update_state()
-        self.async_write_ha_state()
+        self.async_write_ha_state()  
 
     @property
     def device_info(self) -> DeviceInfo:
@@ -104,23 +117,22 @@ class PillSafeDosesSensor(RestoreSensor):
             identifiers={(DOMAIN, self._entry_id)},
             name=self._med_name,
             manufacturer="Pill Logger",
-        )
+        )  
 
     def _update_state(self):
-        now = dt_util.now()
-        
+        now = dt_util.now()  
         if self._tracking_type == "As Needed":
             cutoff = now - timedelta(hours=self._time_window)
             self._timestamps = [ts for ts in self._timestamps if ts >= cutoff]
-            self._attr_native_value = max(0, self._max_pills - len(self._timestamps))
-            
+            self._attr_native_value = max(0, self._max_pills - len(self._timestamps))  
         self._attr_extra_state_attributes = {
             "timestamps": [ts.isoformat() for ts in self._timestamps]
-        }
+        }  
 
     @property
     def native_value(self):
-        return self._attr_native_value
+        return self._attr_native_value  
+
 
 class PillNextDoseSensor(RestoreSensor):
     def __init__(self, entry):
@@ -134,11 +146,10 @@ class PillNextDoseSensor(RestoreSensor):
         self._hours_between_doses = entry.data.get("hours_between_doses", 0)
         self._max_pills = entry.data.get("max_pills_allowed", 0)
         self._time_window = entry.data.get("time_window_hours", 0)
-        self._time_of_day = entry.data.get("time_of_day")
-        
+        self._time_of_day = entry.data.get("time_of_day")  
         self._timestamps = []
         self._attr_extra_state_attributes = {"timestamps": []}
-        self._attr_native_value = None
+        self._attr_native_value = None  
 
     async def async_added_to_hass(self):
         await super().async_added_to_hass()
@@ -147,8 +158,15 @@ class PillNextDoseSensor(RestoreSensor):
         )
         self.async_on_remove(
             async_dispatcher_connect(self.hass, f"pill_reset_{self._entry_id}", self.reset_data)
+        )  
+
+        # Track time passage to recalculate the next dose mathematically every minute
+        self.async_on_remove(
+            async_track_time_interval(
+                self.hass, self._on_interval, timedelta(minutes=1)
+            )
         )
-            
+
         last_state_obj = await self.async_get_last_state()
         if last_state_obj and "timestamps" in last_state_obj.attributes:
             saved_timestamps = last_state_obj.attributes["timestamps"]
@@ -156,17 +174,22 @@ class PillNextDoseSensor(RestoreSensor):
                 dt = dt_util.parse_datetime(ts_str)
                 if dt:
                     self._timestamps.append(dt)
+            self._update_state()  
+
+    def _on_interval(self, now):
+        """Callback to execute mathematical update each minute."""
         self._update_state()
+        self.async_write_ha_state()
 
     def pill_taken(self):
         self._timestamps.append(dt_util.now())
         self._update_state()
-        self.async_write_ha_state()
+        self.async_write_ha_state()  
 
     def reset_data(self):
         self._timestamps = []
         self._update_state()
-        self.async_write_ha_state()
+        self.async_write_ha_state()  
 
     @property
     def device_info(self) -> DeviceInfo:
@@ -174,11 +197,10 @@ class PillNextDoseSensor(RestoreSensor):
             identifiers={(DOMAIN, self._entry_id)},
             name=self._med_name,
             manufacturer="Pill Logger",
-        )
+        )  
 
     def _update_state(self):
-        now = dt_util.now()
-        
+        now = dt_util.now()  
         if self._tracking_type == "Regular Interval":
             if self._timestamps:
                 last_ts = self._timestamps[-1]
@@ -190,10 +212,8 @@ class PillNextDoseSensor(RestoreSensor):
                 try:
                     target_hour, target_minute = map(int, self._time_of_day.split(":"))
                 except ValueError:
-                    target_hour, target_minute = 8, 0
-                
-                target_today = now.replace(hour=target_hour, minute=target_minute, second=0, microsecond=0)
-                
+                    target_hour, target_minute = 8, 0  
+                target_today = now.replace(hour=target_hour, minute=target_minute, second=0, microsecond=0)  
                 if self._timestamps:
                     last_ts = self._timestamps[-1]
                     # Check if the last_ts is on the same calendar day in local time
@@ -206,19 +226,17 @@ class PillNextDoseSensor(RestoreSensor):
         elif self._tracking_type == "As Needed":
             cutoff = now - timedelta(hours=self._time_window)
             self._timestamps = [ts for ts in self._timestamps if ts >= cutoff]
-            safe_doses = max(0, self._max_pills - len(self._timestamps))
-            
+            safe_doses = max(0, self._max_pills - len(self._timestamps))  
             if safe_doses > 0:
                 self._attr_native_value = None
             else:
                 if self._timestamps:
                     self._attr_native_value = self._timestamps[0] + timedelta(hours=self._time_window)
                 else:
-                    self._attr_native_value = None
-                    
+                    self._attr_native_value = None  
         self._attr_extra_state_attributes = {
             "timestamps": [ts.isoformat() for ts in self._timestamps]
-        }
+        }  
 
     @property
     def native_value(self):
