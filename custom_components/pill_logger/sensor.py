@@ -65,7 +65,7 @@ class PillSafeDosesSensor(RestoreSensor):
         self._attr_icon = "mdi:pill"
         self._entry_id = entry.entry_id
         self._tracking_type = entry.data.get("tracking_type")
-        self._max_pills = entry.data.get("safe_doses") or entry.data.get("max_pills_allowed", 1)
+        self._max_pills = entry.data.get("safe_doses", entry.data.get("max_pills_allowed", 1))
         self._time_window = entry.data.get("time_window_hours", 0)  
         self._timestamps = []
         self._attr_extra_state_attributes = {"timestamps": []}
@@ -126,13 +126,26 @@ class PillSafeDosesSensor(RestoreSensor):
             self._timestamps = [ts for ts in self._timestamps if ts >= cutoff]
             self._attr_native_value = max(0, self._max_pills - len(self._timestamps))  
         elif self._tracking_type == "Regular Interval":
-            # For interval, we check if a pill was taken since the last scheduled time would have started.
-            # However, the requirement is to ensure it doesn't show "Unknown".
-            # For Regular Interval and Time of Day, we can show if a dose is currently "available" based on schedule.
-            # To keep it simple and consistent with the requirement of showing a value:
-            self._attr_native_value = self._max_pills
+            # Set native_value to 0 if the time since the last pill is less than hours_between_doses
+            hours_between = self.hass.config_entries.async_get_entry(self._entry_id).data.get("hours_between_doses", 0)
+            if self._timestamps:
+                last_ts = self._timestamps[-1]
+                if now - last_ts < timedelta(hours=hours_between):
+                    self._attr_native_value = 0
+                else:
+                    self._attr_native_value = self._max_pills
+            else:
+                self._attr_native_value = self._max_pills
         elif self._tracking_type == "Time of Day":
-            self._attr_native_value = self._max_pills
+            # Set native_value to 0 if a pill has already been taken on the current calendar day
+            if self._timestamps:
+                last_ts = self._timestamps[-1]
+                if last_ts.date() == now.date():
+                    self._attr_native_value = 0
+                else:
+                    self._attr_native_value = self._max_pills
+            else:
+                self._attr_native_value = self._max_pills
             
         self._attr_extra_state_attributes = {
             "timestamps": [ts.isoformat() for ts in self._timestamps]
@@ -153,7 +166,7 @@ class PillNextDoseSensor(RestoreSensor):
         self._entry_id = entry.entry_id
         self._tracking_type = entry.data.get("tracking_type")
         self._hours_between_doses = entry.data.get("hours_between_doses", 0)
-        self._max_pills = entry.data.get("safe_doses") or entry.data.get("max_pills_allowed", 1)
+        self._max_pills = entry.data.get("safe_doses", entry.data.get("max_pills_allowed", 1))
         self._time_window = entry.data.get("time_window_hours", 0)
         self._time_of_day = entry.data.get("time_of_day")  
         self._timestamps = []
