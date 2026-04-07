@@ -58,7 +58,7 @@ cards:
       {% else %}
         Available now
       {% endif %}
-    icon: mdi:medical-bag
+    icon: 
     icon_color: blue
     badge_icon: >-
       {% set safe = states('sensor.YOUR_MEDICATION_safe_doses') %}
@@ -79,89 +79,132 @@ cards:
         ha-card {
           zoom: 1.1;
         }
-        
-  # 2. The Interactive Buttons
+
+  # 2. The Interactive Columns
   - type: horizontal-stack
     cards:
-      # --- BUTTON STATE A1: Safe to take (Has Doses) ---
-      - type: conditional
-        conditions:
-          - condition: numeric_state
+      # --- COLUMN 1: LARGE TAKE BUTTON ---
+      - type: vertical-stack
+        cards:
+          # Safe to take (Doses > 0)
+          - type: conditional
+            conditions:
+              - condition: numeric_state
+                entity: sensor.YOUR_MEDICATION_safe_doses
+                above: 0
+            card: &take_button
+              type: custom:mushroom-template-card
+              entity: button.take_YOUR_MEDICATION
+              primary: ""
+              secondary: ""
+              icon: mdi:pill
+              icon_color: blue
+              layout: vertical
+              tap_action:
+                action: call-service
+                service: button.press
+                target:
+                  entity_id: button.take_YOUR_MEDICATION
+              card_mod:
+                style: |
+                  ha-card {
+                    height: 120px !important;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                  }
+                  ha-card:hover {
+                    background: rgba(var(--rgb-blue), 0.1);
+                    transition: background 0.2s ease;
+                  }
+                  ha-card:active {
+                    transform: scale(0.95);
+                    animation: pulse 0.3s ease;
+                  }
+                  mushroom-shape-icon {
+                    --icon-main-color: var(--rgb-blue) !important;
+                    --icon-size: 80px !important;
+                  }
+                  @keyframes pulse {
+                    0% { box-shadow: 0 0 0 0 rgba(var(--rgb-blue), 0.7); }
+                    70% { box-shadow: 0 0 0 10px rgba(var(--rgb-blue), 0); }
+                    100% { box-shadow: 0 0 0 0 rgba(var(--rgb-blue), 0); }
+                  }
+
+          # Safe to take (Unknown state)
+          - type: conditional
+            conditions:
+              - condition: state
+                entity: sensor.YOUR_MEDICATION_safe_doses
+                state: "unknown"
+            card: *take_button
+
+          # Limit Reached (Red Warning)
+          - type: conditional
+            conditions:
+              - condition: numeric_state
+                entity: sensor.YOUR_MEDICATION_safe_doses
+                below: 1
+            card:
+              type: custom:mushroom-template-card
+              entity: button.take_YOUR_MEDICATION
+              primary: ""
+              secondary: ""
+              icon: mdi:alert
+              icon_color: red
+              layout: vertical
+              tap_action:
+                action: call-service
+                service: button.press
+                target:
+                  entity_id: button.take_YOUR_MEDICATION
+                confirmation:
+                  text: "WARNING: 0 safe doses available. Override?"
+              card_mod:
+                style: |
+                  ha-card {
+                    height: 142px !important;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    animation: blink 2s infinite;
+                  }
+                  @keyframes blink {
+                    50% { opacity: 0.6; }
+                  }
+                  mushroom-shape-icon {
+                    --icon-size: 80px !important;
+                  }
+
+      # --- COLUMN 2: INFO STACK ---
+      - type: vertical-stack
+        cards:
+          # Safe Doses Row
+          - type: custom:mushroom-template-card
             entity: sensor.YOUR_MEDICATION_safe_doses
-            above: 0
-        card:
-          type: custom:mushroom-entity-card
-          entity: button.take_YOUR_MEDICATION
-          name: Take Pill
-          icon_color: blue
-          show_state: false
-          tap_action:
-            action: call-service
-            service: button.press
-            target:
-              entity_id: button.take_YOUR_MEDICATION
-              
-      # --- BUTTON STATE A2: Safe to take (Scheduled Pill / Unknown Limit) ---
-      - type: conditional
-        conditions:
-          - condition: state
-            entity: sensor.YOUR_MEDICATION_safe_doses
-            state: "unknown"
-        card:
-          type: custom:mushroom-entity-card
-          entity: button.take_YOUR_MEDICATION
-          name: Take Pill
-          icon_color: blue
-          show_state: false
-          tap_action:
-            action: call-service
-            service: button.press
-            target:
-              entity_id: button.take_YOUR_MEDICATION
-              
-      # --- BUTTON STATE B: 0 Doses Left (WARNING!) ---
-      - type: conditional
-        conditions:
-          - condition: numeric_state
-            entity: sensor.YOUR_MEDICATION_safe_doses
-            below: 1
-        card:
-          type: custom:mushroom-entity-card
-          entity: button.take_YOUR_MEDICATION
-          name: LIMIT REACHED
-          icon_color: red
-          icon: mdi:alert
-          show_state: false
-          tap_action:
-            action: call-service
-            service: button.press
-            target:
-              entity_id: button.take_YOUR_MEDICATION
-            confirmation:
-              text: "WARNING: You have 0 safe doses available. Are you sure you want to take this pill anyway?"
-              
-      # --- The Stats (Hides if Unknown) ---
-      - type: conditional
-        conditions:
-          - condition: numeric_state
-            entity: sensor.YOUR_MEDICATION_safe_doses
-            above: -1
-        card:
-          type: custom:mushroom-entity-card
-          entity: sensor.YOUR_MEDICATION_safe_doses
-          name: Safe Doses
-          
-      # --- Hidden Refill Input (Disguised as Inventory) ---
-      - type: custom:mushroom-template-card
-        entity: number.add_YOUR_MEDICATION_refill
-        primary: Inventory Left
-        secondary: "{{ states('number.YOUR_MEDICATION_pills_left') }}"
-        icon: mdi:medical-bag
-        icon_color: blue
-        tap_action:
-          action: none
-        double_tap_action:
-          action: more-info
+            primary: Can take
+            secondary: "{{ states('sensor.YOUR_MEDICATION_safe_doses') }}"
+            icon: mdi:pill
+            icon_color: blue
+            tap_action:
+              action: none
+
+          # Inventory Left Row
+          - type: custom:mushroom-template-card
+            entity: number.YOUR_MEDICATION_pills_left
+            primary: Left
+            secondary: "{{ states('number.YOUR_MEDICATION_pills_left') }}"
+            icon: mdi:pill
+            icon_color: blue
+            double_tap_action:
+              action: more-info
+              entity: number.add_YOUR_MEDICATION_refill
+            card_mod:
+              style: |
+                ha-card:hover {
+                  cursor: pointer;
+                  background: rgba(var(--rgb-blue), 0.05);
+                }
 ```
 
 ---
