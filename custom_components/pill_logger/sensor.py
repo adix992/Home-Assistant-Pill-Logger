@@ -104,7 +104,7 @@ class PillSafeDosesSensor(RestoreSensor):
     def pill_taken(self, *args, **kwargs):
         self._timestamps.append(dt_util.now())
         self._update_state()
-        self.async_write_ha_state(force_update=True)
+        self.async_write_ha_state()
 
     def reset_data(self, *args, **kwargs):
         self._timestamps = []
@@ -206,7 +206,7 @@ class PillNextDoseSensor(RestoreSensor):
     def pill_taken(self, *args, **kwargs):
         self._timestamps.append(dt_util.now())
         self._update_state()
-        self.async_write_ha_state(force_update=True)
+        self.async_write_ha_state()
 
     def reset_data(self, *args, **kwargs):
         self._timestamps = []

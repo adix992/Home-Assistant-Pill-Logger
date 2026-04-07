@@ -53,9 +53,9 @@ class PillStockNumber(RestoreNumber):
     def decrement(self, *args, **kwargs):
         if self._attr_native_value > 0:
             self._attr_native_value -= 1
-            self.async_write_ha_state(force_update=True)
+            self.async_write_ha_state()
 
-    def add_stock(self, amount: float):
+    def add_stock(self, amount: float, *args, **kwargs):
         self._attr_native_value += amount
         self.async_write_ha_state()
 
