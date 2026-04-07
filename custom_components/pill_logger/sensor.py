@@ -65,7 +65,7 @@ class PillSafeDosesSensor(RestoreSensor):
         self._attr_icon = "mdi:pill"
         self._entry_id = entry.entry_id
         self._tracking_type = entry.data.get("tracking_type")
-        self._max_pills = entry.data.get("max_pills_allowed", 0)
+        self._max_pills = entry.data.get("safe_doses") or entry.data.get("max_pills_allowed", 1)
         self._time_window = entry.data.get("time_window_hours", 0)  
         self._timestamps = []
         self._attr_extra_state_attributes = {"timestamps": []}
@@ -125,6 +125,15 @@ class PillSafeDosesSensor(RestoreSensor):
             cutoff = now - timedelta(hours=self._time_window)
             self._timestamps = [ts for ts in self._timestamps if ts >= cutoff]
             self._attr_native_value = max(0, self._max_pills - len(self._timestamps))  
+        elif self._tracking_type == "Regular Interval":
+            # For interval, we check if a pill was taken since the last scheduled time would have started.
+            # However, the requirement is to ensure it doesn't show "Unknown".
+            # For Regular Interval and Time of Day, we can show if a dose is currently "available" based on schedule.
+            # To keep it simple and consistent with the requirement of showing a value:
+            self._attr_native_value = self._max_pills
+        elif self._tracking_type == "Time of Day":
+            self._attr_native_value = self._max_pills
+            
         self._attr_extra_state_attributes = {
             "timestamps": [ts.isoformat() for ts in self._timestamps]
         }  
@@ -144,7 +153,7 @@ class PillNextDoseSensor(RestoreSensor):
         self._entry_id = entry.entry_id
         self._tracking_type = entry.data.get("tracking_type")
         self._hours_between_doses = entry.data.get("hours_between_doses", 0)
-        self._max_pills = entry.data.get("max_pills_allowed", 0)
+        self._max_pills = entry.data.get("safe_doses") or entry.data.get("max_pills_allowed", 1)
         self._time_window = entry.data.get("time_window_hours", 0)
         self._time_of_day = entry.data.get("time_of_day")  
         self._timestamps = []

@@ -35,7 +35,8 @@ class PillLoggerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="regular_interval",
             data_schema=vol.Schema({
                 vol.Required("initial_stock", default=30): int,
-                vol.Required("hours_between_doses", default=8): int
+                vol.Required("hours_between_doses", default=8): int,
+                vol.Required("safe_doses", default=1): int
             })
         )
 
@@ -48,7 +49,8 @@ class PillLoggerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="time_of_day",
             data_schema=vol.Schema({
                 vol.Required("initial_stock", default=30): int,
-                vol.Required("time_of_day", default="08:00"): str
+                vol.Required("time_of_day", default="08:00"): str,
+                vol.Required("safe_doses", default=1): int
             })
         )
 
@@ -61,7 +63,7 @@ class PillLoggerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="as_needed",
             data_schema=vol.Schema({
                 vol.Required("initial_stock", default=30): int,
-                vol.Required("max_pills_allowed", default=2): int,
+                vol.Required("safe_doses", default=2): int,
                 vol.Required("time_window_hours", default=8): int
             })
         )
