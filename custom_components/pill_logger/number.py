@@ -23,6 +23,8 @@ class PillStockNumber(RestoreNumber):
         self._attr_native_value = float(initial_stock)
         self._attr_native_step = 1.0
         self._attr_native_min_value = 0.0
+        self._attr_native_max_value = 5000.0
+        self._attr_mode = NumberMode.BOX
 
     @property
     def device_info(self) -> DeviceInfo:
@@ -48,7 +50,7 @@ class PillStockNumber(RestoreNumber):
         self._attr_native_value = value
         self.async_write_ha_state()
 
-    def decrement(self):
+    def decrement(self, *args, **kwargs):
         if self._attr_native_value > 0:
             self._attr_native_value -= 1
             self.async_write_ha_state(force_update=True)
