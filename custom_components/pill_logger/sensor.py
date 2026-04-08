@@ -12,6 +12,9 @@ async def async_setup_entry(hass: HomeAssistant, entry, async_add_entities):
     entities = [PillTotalSensor(med_name, entry.entry_id)]
     entities.append(PillSafeDosesSensor(entry))
     entities.append(PillNextDoseSensor(entry))
+    entities.append(PillAvgDosesSensor(entry, 7, "Avg Daily Doses (7 Days)"))
+    entities.append(PillAvgDosesSensor(entry, 30, "Avg Daily Doses (30 Days)"))
+    entities.append(PillAvgDosesSensor(entry, 365, "Avg Daily Doses (Yearly)"))
     async_add_entities(entities)  
 
 class PillTotalSensor(RestoreSensor):
@@ -67,9 +70,9 @@ class PillSafeDosesSensor(RestoreSensor):
         self._attr_icon = "mdi:pill"
         self._entry_id = entry.entry_id
         self._tracking_type = entry.data.get("tracking_type")
-        self._max_pills = entry.data.get("safe_doses", entry.data.get("max_pills_allowed", 1))
-        self._time_window = entry.data.get("time_window_hours", 0)
-        self._time_of_day = entry.data.get("time_of_day")
+        self._max_pills = entry.options.get("safe_doses", entry.data.get("safe_doses", entry.data.get("max_pills_allowed", 1)))
+        self._time_window = entry.options.get("time_window_hours", entry.data.get("time_window_hours", 0))
+        self._time_of_day = entry.options.get("time_of_day", entry.data.get("time_of_day"))
         self._timestamps = []
         self._attr_extra_state_attributes = {"timestamps": []}
         self._attr_native_value = None  
@@ -133,7 +136,8 @@ class PillSafeDosesSensor(RestoreSensor):
             self._attr_native_value = max(0, self._max_pills - len(self._timestamps))  
         elif self._tracking_type == "Regular Interval":
             # Set native_value to 0 if the time since the last pill is less than hours_between_doses
-            hours_between = self.hass.config_entries.async_get_entry(self._entry_id).data.get("hours_between_doses", 0)
+            entry = self.hass.config_entries.async_get_entry(self._entry_id)
+            hours_between = entry.options.get("hours_between_doses", entry.data.get("hours_between_doses", 0))
             if self._timestamps:
                 last_ts = self._timestamps[-1]
                 if now - last_ts < timedelta(hours=hours_between):
@@ -186,10 +190,10 @@ class PillNextDoseSensor(RestoreSensor):
         self._attr_device_class = SensorDeviceClass.TIMESTAMP
         self._entry_id = entry.entry_id
         self._tracking_type = entry.data.get("tracking_type")
-        self._hours_between_doses = entry.data.get("hours_between_doses", 0)
-        self._max_pills = entry.data.get("safe_doses", entry.data.get("max_pills_allowed", 1))
-        self._time_window = entry.data.get("time_window_hours", 0)
-        self._time_of_day = entry.data.get("time_of_day")  
+        self._hours_between_doses = entry.options.get("hours_between_doses", entry.data.get("hours_between_doses", 0))
+        self._max_pills = entry.options.get("safe_doses", entry.data.get("safe_doses", entry.data.get("max_pills_allowed", 1)))
+        self._time_window = entry.options.get("time_window_hours", entry.data.get("time_window_hours", 0))
+        self._time_of_day = entry.options.get("time_of_day", entry.data.get("time_of_day"))  
         self._timestamps = []
         self._attr_extra_state_attributes = {"timestamps": []}
         self._attr_native_value = None  
@@ -283,6 +287,106 @@ class PillNextDoseSensor(RestoreSensor):
         self._attr_extra_state_attributes = {
             "timestamps": [ts.isoformat() for ts in self._timestamps]
         }  
+
+    @property
+    def native_value(self):
+        return self._attr_native_value
+
+
+class PillAvgDosesSensor(RestoreSensor):
+    def __init__(self, entry, window_days, sensor_name):
+        med_name = entry.data["medication_name"]
+        self._med_name = med_name
+        self._window_days_target = window_days
+        self._attr_name = f"{med_name} {sensor_name}"
+        self._attr_unique_id = f"{entry.entry_id}_avg_doses_{window_days}"
+        self._attr_icon = "mdi:chart-bell-curve"
+        self._entry_id = entry.entry_id
+        self._timestamps = []
+        self._history_start_date = None
+        self._attr_extra_state_attributes = {"timestamps": [], "history_start_date": None}
+        self._attr_native_value = 0.0
+
+    async def async_added_to_hass(self):
+        await super().async_added_to_hass()
+        self.async_on_remove(
+            async_dispatcher_connect(self.hass, f"pill_taken_{self._entry_id}", self.pill_taken)
+        )
+        self.async_on_remove(
+            async_dispatcher_connect(self.hass, f"pill_reset_{self._entry_id}", self.reset_data)
+        )
+
+        self.async_on_remove(
+            async_track_time_interval(
+                self.hass, self._on_interval, timedelta(hours=1)
+            )
+        )
+
+        last_state_obj = await self.async_get_last_state()
+        if last_state_obj:
+            if "timestamps" in last_state_obj.attributes:
+                saved_timestamps = last_state_obj.attributes["timestamps"]
+                for ts_str in saved_timestamps:
+                    dt = dt_util.parse_datetime(ts_str)
+                    if dt:
+                        self._timestamps.append(dt)
+            if "history_start_date" in last_state_obj.attributes and last_state_obj.attributes["history_start_date"]:
+                self._history_start_date = dt_util.parse_datetime(last_state_obj.attributes["history_start_date"])
+
+        if self._history_start_date is None:
+            self._history_start_date = dt_util.now()
+
+        self._update_state()
+
+    @callback
+    def _on_interval(self, now):
+        self._update_state()
+        self.async_write_ha_state()
+
+    @callback
+    def pill_taken(self, *args, **kwargs):
+        self._timestamps.append(dt_util.now())
+        self._update_state()
+        self.async_write_ha_state()
+
+    @callback
+    def reset_data(self, *args, **kwargs):
+        self._timestamps = []
+        self._history_start_date = dt_util.now()
+        self._update_state()
+        self.async_write_ha_state()
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        return DeviceInfo(
+            identifiers={(DOMAIN, self._entry_id)},
+            name=self._med_name,
+            manufacturer="Pill Logger",
+        )
+
+    def _update_state(self):
+        now = dt_util.now()
+        if not self._history_start_date:
+            self._history_start_date = now
+
+        days_since_start = (now - self._history_start_date).total_seconds() / 86400.0
+        days_since_start = max(1.0, days_since_start)
+
+        actual_window_days = min(days_since_start, float(self._window_days_target))
+        cutoff = now - timedelta(days=actual_window_days)
+
+        self._timestamps = [ts for ts in self._timestamps if ts >= cutoff]
+
+        if actual_window_days > 0:
+            avg = len(self._timestamps) / actual_window_days
+            self._attr_native_value = round(avg, 2)
+        else:
+            self._attr_native_value = 0.0
+
+        self._attr_extra_state_attributes = {
+            "timestamps": [ts.isoformat() for ts in self._timestamps],
+            "history_start_date": self._history_start_date.isoformat() if self._history_start_date else None
+        }
 
     @property
     def native_value(self):

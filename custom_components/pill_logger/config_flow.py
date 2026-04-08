@@ -1,5 +1,6 @@
 import voluptuous as vol
 from homeassistant import config_entries
+from homeassistant.core import callback
 from .const import DOMAIN
 
 class PillLoggerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -66,4 +67,37 @@ class PillLoggerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 vol.Required("safe_doses", default=2): int,
                 vol.Required("time_window_hours", default=8): int
             })
+        )
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry):
+        return PillLoggerOptionsFlowHandler(config_entry)
+
+
+class PillLoggerOptionsFlowHandler(config_entries.OptionsFlow):
+    def __init__(self, config_entry):
+        self.config_entry = config_entry
+
+    async def async_step_init(self, user_input=None):
+        if user_input is not None:
+            return self.async_create_entry(title="", data=user_input)
+
+        tracking_type = self.config_entry.data.get("tracking_type")
+        options = self.config_entry.options
+        data = self.config_entry.data
+
+        schema_dict = {}
+        if tracking_type == "Regular Interval":
+            schema_dict[vol.Required("hours_between_doses", default=options.get("hours_between_doses", data.get("hours_between_doses", 8)))] = int
+        elif tracking_type == "Time of Day":
+            schema_dict[vol.Required("time_of_day", default=options.get("time_of_day", data.get("time_of_day", "08:00")))] = str
+        elif tracking_type == "As Needed":
+            schema_dict[vol.Required("time_window_hours", default=options.get("time_window_hours", data.get("time_window_hours", 8)))] = int
+
+        schema_dict[vol.Required("safe_doses", default=options.get("safe_doses", data.get("safe_doses", 1)))] = int
+
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema(schema_dict)
         )
