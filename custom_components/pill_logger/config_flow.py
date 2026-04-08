@@ -77,15 +77,15 @@ class PillLoggerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 class PillLoggerOptionsFlowHandler(config_entries.OptionsFlow):
     def __init__(self, config_entry):
-        self.config_entry = config_entry
+        self._entry = config_entry
 
     async def async_step_init(self, user_input=None):
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
 
-        tracking_type = self.config_entry.data.get("tracking_type")
-        options = self.config_entry.options
-        data = self.config_entry.data
+        tracking_type = self._entry.data.get("tracking_type")
+        options = self._entry.options
+        data = self._entry.data
 
         schema_dict = {}
         if tracking_type == "Regular Interval":
