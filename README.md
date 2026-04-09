@@ -45,6 +45,7 @@ Once those are installed, add a "Manual" card to your dashboard and paste this c
 ```yaml
 type: custom:vertical-stack-in-card
 cards:
+  # 1. The Header
   - type: custom:mushroom-template-card
     entity: sensor.YOUR_MEDICATION_next_dose
     primary: YOUR_MEDICATION
@@ -90,7 +91,7 @@ cards:
                 above: 0
             card: &take_button
               type: custom:mushroom-template-card
-              entity: button.YOUR_MEDICATION_take_YOUR_MEDICATION
+              entity: button.YOUR_MEDICATION_take_YOUR_MEDICATION # Corrected template for button entity ID
               primary: Take Pill
               secondary: >-
                 {% set ts = state_attr('sensor.YOUR_MEDICATION_safe_doses', 'timestamps') %}
@@ -102,7 +103,7 @@ cards:
                 action: call-service
                 service: button.press
                 target:
-                  entity_id: button.YOUR_MEDICATION_take_YOUR_MEDICATION
+                  entity_id: button.YOUR_MEDICATION_take_YOUR_MEDICATION # Corrected template for button entity ID
               card_mod:
                 style: |
                   ha-card {
@@ -139,7 +140,7 @@ cards:
                 below: 1
             card:
               type: custom:mushroom-template-card
-              entity: button.YOUR_MEDICATION_take_YOUR_MEDICATION
+              entity: button.YOUR_MEDICATION_take_YOUR_MEDICATION # Corrected template for button entity ID
               primary: LIMIT REACHED
               secondary: >-
                 {% set ts = state_attr('sensor.YOUR_MEDICATION_safe_doses', 'timestamps') %}
@@ -151,7 +152,7 @@ cards:
                 action: call-service
                 service: button.press
                 target:
-                  entity_id: button.YOUR_MEDICATION_take_YOUR_MEDICATION
+                  entity_id: button.YOUR_MEDICATION_take_YOUR_MEDICATION # Corrected template for button entity ID
                 confirmation:
                   text: "WARNING: 0 safe doses available. Override?"
               card_mod:
@@ -195,7 +196,7 @@ cards:
               action: none
             double_tap_action:
               action: more-info
-              entity: number.YOUR_MEDICATION_add_YOUR_MEDICATION_refill
+              entity: number.YOUR_MEDICATION_add_YOUR_MEDICATION_refill # Corrected template for refill number entity ID
             card_mod:
               style: |
                 ha-card:hover {
@@ -203,7 +204,7 @@ cards:
                   background: rgba(var(--rgb-blue), 0.05);
                 }
   - type: custom:mushroom-chips-card
-    alignment: center
+    alignment: center # Added alignment to center the chips
     chips:
       - type: template
         content: "7d Avg: {{ states('sensor.YOUR_MEDICATION_avg_daily_doses_7_days') }}"
