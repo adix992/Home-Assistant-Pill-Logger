@@ -45,31 +45,31 @@ Once those are installed, add a "Manual" card to your dashboard and paste this c
 ```yaml
 type: custom:vertical-stack-in-card
 cards:
-  # 1. The Header
   - type: custom:mushroom-template-card
     entity: sensor.YOUR_MEDICATION_next_dose
-    primary: Medication Name
+    primary: YOUR_MEDICATION
     secondary: >-
-      {% set next = states('sensor.YOUR_MEDICATION_next_dose') %}
-      {% if next in ['unknown', 'unavailable', 'None', ''] %}
+      {% set next = states('sensor.YOUR_MEDICATION_next_dose') | as_datetime(None) %}
+      {% if next == None or next <= now() %}
         Available now
-      {% elif next | as_datetime(None) != None and now() < next | as_datetime %}
-        Wait: {{ next | as_datetime | time_until(now()) }}
       {% else %}
-        Available now
+        {% set total_seconds = (next - now()).total_seconds() %}
+        {% set hours = (total_seconds // 3600) | int %}
+        {% set minutes = ((total_seconds % 3600) // 60) | int %}
+        Wait: {% if hours > 0 %}{{ hours }} hours {% endif %}{{ minutes }} minutes
       {% endif %}
-    icon: mdi:pill
+    icon: ""
     icon_color: blue
     badge_icon: >-
-      {% set safe = states('sensor.YOUR_MEDICATION_safe_doses') %}
-      {% if safe == '0' %}
+      {% set safe = states('sensor.YOUR_MEDICATION_safe_doses') %} {% if safe == '0'
+      %}
         mdi:clock-outline
       {% elif safe | int(-1) > 0 %}
         mdi:check
       {% endif %}
     badge_color: >-
-      {% set safe = states('sensor.YOUR_MEDICATION_safe_doses') %}
-      {% if safe == '0' %}
+      {% set safe = states('sensor.YOUR_MEDICATION_safe_doses') %} {% if safe == '0'
+      %}
         orange
       {% elif safe | int(-1) > 0 %}
         green
@@ -77,25 +77,25 @@ cards:
     card_mod:
       style: |
         ha-card {
-          zoom: 1.1;
+          zoom: 1.2;
         }
-  # 2. The Interactive Columns
   - type: horizontal-stack
     cards:
-      # --- COLUMN 1: LARGE TAKE BUTTON ---
       - type: vertical-stack
         cards:
-          # Safe to take (Doses > 0)
           - type: conditional
             conditions:
               - condition: numeric_state
                 entity: sensor.YOUR_MEDICATION_safe_doses
                 above: 0
-            card: &take_button
+            card:
               type: custom:mushroom-template-card
               entity: button.take_YOUR_MEDICATION
-              primary: ""
-              secondary: ""
+              primary: Take Pill
+              secondary: >-
+                {% set ts = state_attr('sensor.YOUR_MEDICATION_safe_doses',
+                'timestamps') %} {{ relative_time(ts | last | as_datetime) if ts
+                else 'Never' }} ago
               icon: mdi:pill
               icon_color: blue
               layout: vertical
@@ -109,8 +109,6 @@ cards:
                   ha-card {
                     height: 120px !important;
                     display: flex;
-                    align-items: center;
-                    justify-content: center;
                   }
                   ha-card:hover {
                     background: rgba(var(--rgb-blue), 0.1);
@@ -122,21 +120,57 @@ cards:
                   }
                   mushroom-shape-icon {
                     --icon-main-color: var(--rgb-blue) !important;
-                    --icon-size: 80px !important;
+                    --icon-size: 40px !important;
                   }
                   @keyframes pulse {
                     0% { box-shadow: 0 0 0 0 rgba(var(--rgb-blue), 0.7); }
                     70% { box-shadow: 0 0 0 10px rgba(var(--rgb-blue), 0); }
                     100% { box-shadow: 0 0 0 0 rgba(var(--rgb-blue), 0); }
                   }
-          # Safe to take (Unknown state)
           - type: conditional
             conditions:
               - condition: state
                 entity: sensor.YOUR_MEDICATION_safe_doses
-                state: "unknown"
-            card: *take_button
-          # Limit Reached (Red Warning)
+                state: unknown
+            card:
+              type: custom:mushroom-template-card
+              entity: button.take_YOUR_MEDICATION
+              primary: Take Pill
+              secondary: >-
+                {% set ts = state_attr('sensor.YOUR_MEDICATION_safe_doses',
+                'timestamps') %} {{ relative_time(ts | last | as_datetime) if ts
+                else 'Never' }} ago
+              icon: mdi:pill
+              icon_color: blue
+              layout: vertical
+              tap_action:
+                action: call-service
+                service: button.press
+                target:
+                  entity_id: button.take_YOUR_MEDICATION
+              card_mod:
+                style: |
+                  ha-card {
+                    height: 120px !important;
+                    display: flex;
+                  }
+                  ha-card:hover {
+                    background: rgba(var(--rgb-blue), 0.1);
+                    transition: background 0.2s ease;
+                  }
+                  ha-card:active {
+                    transform: scale(0.95);
+                    animation: pulse 0.3s ease;
+                  }
+                  mushroom-shape-icon {
+                    --icon-main-color: var(--rgb-blue) !important;
+                    --icon-size: 40px !important;
+                  }
+                  @keyframes pulse {
+                    0% { box-shadow: 0 0 0 0 rgba(var(--rgb-blue), 0.7); }
+                    70% { box-shadow: 0 0 0 10px rgba(var(--rgb-blue), 0); }
+                    100% { box-shadow: 0 0 0 0 rgba(var(--rgb-blue), 0); }
+                  }
           - type: conditional
             conditions:
               - condition: numeric_state
@@ -145,8 +179,11 @@ cards:
             card:
               type: custom:mushroom-template-card
               entity: button.take_YOUR_MEDICATION
-              primary: ""
-              secondary: ""
+              primary: LIMIT REACHED
+              secondary: >-
+                {% set ts = state_attr('sensor.YOUR_MEDICATION_safe_doses',
+                'timestamps') %} {{ relative_time(ts | last | as_datetime) if ts
+                else 'Never' }} ago
               icon: mdi:alert
               icon_color: red
               layout: vertical
@@ -160,22 +197,26 @@ cards:
               card_mod:
                 style: |
                   ha-card {
-                    height: 142px !important;
+                    height: 120px !important;
                     display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    animation: blink 2s infinite;
                   }
-                  @keyframes blink {
-                    50% { opacity: 0.6; }
+                  ha-card:hover {
+                    background: rgba(var(--rgb-red), 0.1);
+                  }
+                  ha-card:active {
+                    transform: scale(0.95);
+                    animation: pulse-red 0.3s ease;
                   }
                   mushroom-shape-icon {
-                    --icon-size: 80px !important;
+                    --icon-size: 40px !important;
                   }
-      # --- COLUMN 2: INFO STACK ---
+                  @keyframes pulse-red {
+                    0% { box-shadow: 0 0 0 0 rgba(var(--rgb-red), 0.7); }
+                    70% { box-shadow: 0 0 0 10px rgba(var(--rgb-red), 0); }
+                    100% { box-shadow: 0 0 0 0 rgba(var(--rgb-red), 0); }
+                  }
       - type: vertical-stack
         cards:
-          # Safe Doses Row
           - type: custom:mushroom-template-card
             entity: sensor.YOUR_MEDICATION_safe_doses
             primary: Can take
@@ -184,13 +225,14 @@ cards:
             icon_color: blue
             tap_action:
               action: none
-          # Inventory Left Row
           - type: custom:mushroom-template-card
             entity: number.YOUR_MEDICATION_pills_left
             primary: Left
             secondary: "{{ states('number.YOUR_MEDICATION_pills_left') }}"
             icon: mdi:pill
             icon_color: blue
+            tap_action:
+              action: none
             double_tap_action:
               action: more-info
               entity: number.add_YOUR_MEDICATION_refill
