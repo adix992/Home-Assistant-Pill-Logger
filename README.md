@@ -44,13 +44,13 @@ Once those are installed, add a "Manual" card to your dashboard and paste this c
 
 ```yaml
 type: custom:vertical-stack-in-card
+type: custom:vertical-stack-in-card
 cards:
-  # 1. The Header
   - type: custom:mushroom-template-card
-    entity: sensor.YOUR_MEDICATION_next_dose
-    primary: YOUR_MEDICATION
+    entity: sensor.vitamin_d_next_dose
+    primary: Vitamin D
     secondary: >-
-      {% set next = states('sensor.YOUR_MEDICATION_next_dose') | as_datetime(None) %}
+      {% set next = states('sensor.vitamin_d_next_dose') | as_datetime(None) %}
       {% if next == None or next <= now() %}
         Available now
       {% else %}
@@ -59,21 +59,7 @@ cards:
         {% set minutes = ((total_seconds % 3600) // 60) | int %}
         Wait: {% if hours > 0 %}{{ hours }} hours {% endif %}{{ minutes }} minutes
       {% endif %}
-    icon_color: blue
-    badge_icon: >-
-      {% set safe = states('sensor.YOUR_MEDICATION_safe_doses') %}
-      {% if safe == '0' %}
-        mdi:clock-outline
-      {% elif safe | int(-1) > 0 %}
-        mdi:check
-      {% endif %}
-    badge_color: >-
-      {% set safe = states('sensor.YOUR_MEDICATION_safe_doses') %}
-      {% if safe == '0' %}
-        orange
-      {% elif safe | int(-1) > 0 %}
-        green
-      {% endif %}
+    icon: none
     card_mod:
       style: |
         ha-card {
@@ -86,14 +72,14 @@ cards:
           - type: conditional
             conditions:
               - condition: numeric_state
-                entity: sensor.YOUR_MEDICATION_safe_doses
+                entity: sensor.vitamin_d_safe_doses
                 above: 0
             card: &take_button
               type: custom:mushroom-template-card
-              entity: button.YOUR_MEDICATION_take_YOUR_MEDICATION # Corrected template for button entity ID
+              entity: button.vitamin_d_take_vitamin_d
               primary: Take Pill
               secondary: >-
-                {% set ts = state_attr('sensor.YOUR_MEDICATION_safe_doses', 'timestamps') %}
+                {% set ts = state_attr('sensor.vitamin_d_safe_doses', 'timestamps') %}
                 {{ relative_time(ts | last | as_datetime) if ts else 'Never' }} ago
               icon: mdi:pill
               icon_color: blue
@@ -102,7 +88,7 @@ cards:
                 action: call-service
                 service: button.press
                 target:
-                  entity_id: button.YOUR_MEDICATION_take_YOUR_MEDICATION # Corrected template for button entity ID
+                  entity_id: button.vitamin_d_take_vitamin_d
               card_mod:
                 style: |
                   ha-card {
@@ -129,20 +115,20 @@ cards:
           - type: conditional
             conditions:
               - condition: state
-                entity: sensor.YOUR_MEDICATION_safe_doses
+                entity: sensor.vitamin_d_safe_doses
                 state: unknown
             card: *take_button
           - type: conditional
             conditions:
               - condition: numeric_state
-                entity: sensor.YOUR_MEDICATION_safe_doses
+                entity: sensor.vitamin_d_safe_doses
                 below: 1
             card:
               type: custom:mushroom-template-card
-              entity: button.YOUR_MEDICATION_take_YOUR_MEDICATION # Corrected template for button entity ID
+              entity: button.vitamin_d_take_vitamin_d
               primary: LIMIT REACHED
               secondary: >-
-                {% set ts = state_attr('sensor.YOUR_MEDICATION_safe_doses', 'timestamps') %}
+                {% set ts = state_attr('sensor.vitamin_d_safe_doses', 'timestamps') %}
                 {{ relative_time(ts | last | as_datetime) if ts else 'Never' }} ago
               icon: mdi:alert
               icon_color: red
@@ -151,7 +137,7 @@ cards:
                 action: call-service
                 service: button.press
                 target:
-                  entity_id: button.YOUR_MEDICATION_take_YOUR_MEDICATION # Corrected template for button entity ID
+                  entity_id: button.vitamin_d_take_vitamin_d
                 confirmation:
                   text: "WARNING: 0 safe doses available. Override?"
               card_mod:
@@ -178,42 +164,30 @@ cards:
       - type: vertical-stack
         cards:
           - type: custom:mushroom-template-card
-            entity: sensor.YOUR_MEDICATION_safe_doses
+            entity: sensor.vitamin_d_safe_doses
             primary: Can take
-            secondary: "{{ states('sensor.YOUR_MEDICATION_safe_doses') }}"
+            secondary: "{{ states('sensor.vitamin_d_safe_doses') }}"
             icon: mdi:pill
             icon_color: blue
             tap_action:
               action: none
           - type: custom:mushroom-template-card
-            entity: number.YOUR_MEDICATION_pills_left
+            entity: number.vitamin_d_pills_left
             primary: Left
-            secondary: "{{ states('number.YOUR_MEDICATION_pills_left') }}"
+            secondary: "{{ states('number.vitamin_d_pills_left') }}"
             icon: mdi:pill
             icon_color: blue
             tap_action:
               action: none
             double_tap_action:
               action: more-info
-              entity: number.YOUR_MEDICATION_add_YOUR_MEDICATION_refill # Corrected template for refill number entity ID
+              entity: number.vitamin_d_add_vitamin_d_refill
             card_mod:
               style: |
                 ha-card:hover {
                   cursor: pointer;
                   background: rgba(var(--rgb-blue), 0.05);
                 }
-  - type: custom:mushroom-chips-card
-    alignment: center # Added alignment to center the chips
-    chips:
-      - type: template
-        content: "7d Avg: {{ states('sensor.YOUR_MEDICATION_avg_daily_doses_7_days') }}"
-        icon: mdi:chart-line
-      - type: template
-        content: "30d Avg: {{ states('sensor.YOUR_MEDICATION_avg_daily_doses_30_days') }}"
-        icon: mdi:chart-line
-      - type: template
-        content: "Year Avg: {{ states('sensor.YOUR_MEDICATION_avg_daily_doses_yearly') }}"
-        icon: mdi:chart-line
 ```
 
 ---
