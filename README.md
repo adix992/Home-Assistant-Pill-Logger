@@ -58,18 +58,18 @@ cards:
         {% set minutes = ((total_seconds % 3600) // 60) | int %}
         Wait: {% if hours > 0 %}{{ hours }} hours {% endif %}{{ minutes }} minutes
       {% endif %}
-    icon: ""
+    icon: mdi:pill
     icon_color: blue
     badge_icon: >-
-      {% set safe = states('sensor.YOUR_MEDICATION_safe_doses') %} {% if safe == '0'
-      %}
+      {% set safe = states('sensor.YOUR_MEDICATION_safe_doses') %}
+      {% if safe == '0' %}
         mdi:clock-outline
       {% elif safe | int(-1) > 0 %}
         mdi:check
       {% endif %}
     badge_color: >-
-      {% set safe = states('sensor.YOUR_MEDICATION_safe_doses') %} {% if safe == '0'
-      %}
+      {% set safe = states('sensor.YOUR_MEDICATION_safe_doses') %}
+      {% if safe == '0' %}
         orange
       {% elif safe | int(-1) > 0 %}
         green
@@ -88,14 +88,13 @@ cards:
               - condition: numeric_state
                 entity: sensor.YOUR_MEDICATION_safe_doses
                 above: 0
-            card:
+            card: &take_button
               type: custom:mushroom-template-card
-              entity: button.take_YOUR_MEDICATION
+              entity: button.YOUR_MEDICATION_take_YOUR_MEDICATION
               primary: Take Pill
               secondary: >-
-                {% set ts = state_attr('sensor.YOUR_MEDICATION_safe_doses',
-                'timestamps') %} {{ relative_time(ts | last | as_datetime) if ts
-                else 'Never' }} ago
+                {% set ts = state_attr('sensor.YOUR_MEDICATION_safe_doses', 'timestamps') %}
+                {{ relative_time(ts | last | as_datetime) if ts else 'Never' }} ago
               icon: mdi:pill
               icon_color: blue
               layout: vertical
@@ -103,7 +102,7 @@ cards:
                 action: call-service
                 service: button.press
                 target:
-                  entity_id: button.take_YOUR_MEDICATION
+                  entity_id: button.YOUR_MEDICATION_take_YOUR_MEDICATION
               card_mod:
                 style: |
                   ha-card {
@@ -132,45 +131,7 @@ cards:
               - condition: state
                 entity: sensor.YOUR_MEDICATION_safe_doses
                 state: unknown
-            card:
-              type: custom:mushroom-template-card
-              entity: button.take_YOUR_MEDICATION
-              primary: Take Pill
-              secondary: >-
-                {% set ts = state_attr('sensor.YOUR_MEDICATION_safe_doses',
-                'timestamps') %} {{ relative_time(ts | last | as_datetime) if ts
-                else 'Never' }} ago
-              icon: mdi:pill
-              icon_color: blue
-              layout: vertical
-              tap_action:
-                action: call-service
-                service: button.press
-                target:
-                  entity_id: button.take_YOUR_MEDICATION
-              card_mod:
-                style: |
-                  ha-card {
-                    height: 120px !important;
-                    display: flex;
-                  }
-                  ha-card:hover {
-                    background: rgba(var(--rgb-blue), 0.1);
-                    transition: background 0.2s ease;
-                  }
-                  ha-card:active {
-                    transform: scale(0.95);
-                    animation: pulse 0.3s ease;
-                  }
-                  mushroom-shape-icon {
-                    --icon-main-color: var(--rgb-blue) !important;
-                    --icon-size: 40px !important;
-                  }
-                  @keyframes pulse {
-                    0% { box-shadow: 0 0 0 0 rgba(var(--rgb-blue), 0.7); }
-                    70% { box-shadow: 0 0 0 10px rgba(var(--rgb-blue), 0); }
-                    100% { box-shadow: 0 0 0 0 rgba(var(--rgb-blue), 0); }
-                  }
+            card: *take_button
           - type: conditional
             conditions:
               - condition: numeric_state
@@ -178,12 +139,11 @@ cards:
                 below: 1
             card:
               type: custom:mushroom-template-card
-              entity: button.take_YOUR_MEDICATION
+              entity: button.YOUR_MEDICATION_take_YOUR_MEDICATION
               primary: LIMIT REACHED
               secondary: >-
-                {% set ts = state_attr('sensor.YOUR_MEDICATION_safe_doses',
-                'timestamps') %} {{ relative_time(ts | last | as_datetime) if ts
-                else 'Never' }} ago
+                {% set ts = state_attr('sensor.YOUR_MEDICATION_safe_doses', 'timestamps') %}
+                {{ relative_time(ts | last | as_datetime) if ts else 'Never' }} ago
               icon: mdi:alert
               icon_color: red
               layout: vertical
@@ -191,7 +151,7 @@ cards:
                 action: call-service
                 service: button.press
                 target:
-                  entity_id: button.take_YOUR_MEDICATION
+                  entity_id: button.YOUR_MEDICATION_take_YOUR_MEDICATION
                 confirmation:
                   text: "WARNING: 0 safe doses available. Override?"
               card_mod:
@@ -242,8 +202,8 @@ cards:
                   cursor: pointer;
                   background: rgba(var(--rgb-blue), 0.05);
                 }
-  # 3. Insights (Averages)
   - type: custom:mushroom-chips-card
+    alignment: center
     chips:
       - type: template
         content: "7d Avg: {{ states('sensor.YOUR_MEDICATION_avg_daily_doses_7_days') }}"
