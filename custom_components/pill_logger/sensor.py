@@ -274,32 +274,37 @@ class PillNextDoseSensor(RestoreSensor):
                 else:
                     self._attr_native_value = target_today
         elif self._tracking_type == "As Needed":
-            cutoff = now - timedelta(hours=self._time_window)
+            now = dt_util.now()
             
-            # Use a temporary list to calculate safe doses so we don't prematurely delete history
-            valid_timestamps = [ts for ts in self._timestamps if ts >= cutoff]
-            safe_doses = max(0, self._max_pills - len(valid_timestamps))
+            # --- Calculate safe_doses using a temporary pruned list ---
+            # Prune timestamps that are outside the time window for safe_doses calculation.
+            cutoff_for_safe_doses = now - timedelta(hours=self._time_window)
+            # Create a temporary list that is pruned for safe_doses calculation
+            valid_timestamps_for_calc = [ts for ts in self._timestamps if ts >= cutoff_for_safe_doses]
+            safe_doses = max(0, self._max_pills - len(valid_timestamps_for_calc))
 
-            if safe_doses > 0:
-                # Output the time of the last taken pill instead of None
-                if self._timestamps:
-                    self._attr_native_value = self._timestamps[-1]
+            # --- Determine the value for the _attr_native_value for the NextDose sensor ---
+            # Goal: Show the timestamp of the *last pill taken* for "X hours ago" display.
+            # This is based on the *full* history list (`self._timestamps`).
+            if self._timestamps: # If there's ANY history at all in the full history list
+                self._attr_native_value = self._timestamps[-1] # Use the most recent pill taken
             else:
-                if valid_timestamps:
-                    self._attr_native_value = valid_timestamps[0] + timedelta(hours=self._time_window)
+                # No history at all.
+                self._attr_native_value = None
 
-            # Safely update the main array, but ALWAYS append the last known timestamp 
-            # so the user can see 'xx hours ago' in the UI.
-            if self._timestamps:
-                last_ts = self._timestamps[-1]
-                self._timestamps = valid_timestamps
-                if last_ts not in self._timestamps:
-                    self._timestamps.append(last_ts)
-            else:
-                self._timestamps = valid_timestamps
-        self._attr_extra_state_attributes = {
-            "timestamps": [ts.isoformat() for ts in self._timestamps]
-        }  
+            # --- Update the state attributes ---
+            # Save the *full* history of timestamps for restoration.
+            # The pruning for safe_doses calculation is temporary and handled by valid_timestamps_for_calc.
+            # The internal `self._timestamps` list itself is NOT pruned here and retains full history.
+            self._attr_extra_state_attributes = {
+                "timestamps": [ts.isoformat() for ts in self._timestamps], # Save full history
+                "safe_doses_calculated": safe_doses # Save calculated safe_doses for context
+            }
+            
+        if self._tracking_type != "As Needed":
+            self._attr_extra_state_attributes = {
+                "timestamps": [ts.isoformat() for ts in self._timestamps]
+            }
 
     @property
     def native_value(self):
