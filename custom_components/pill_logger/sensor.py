@@ -275,30 +275,22 @@ class PillNextDoseSensor(RestoreSensor):
                     self._attr_native_value = target_today
         elif self._tracking_type == "As Needed":
             now = dt_util.now()
-            
-            # --- Calculate safe_doses using a temporary pruned list ---
-            # Prune timestamps that are outside the time window for safe_doses calculation.
             cutoff_for_safe_doses = now - timedelta(hours=self._time_window)
-            # Create a temporary list that is pruned for safe_doses calculation
             valid_timestamps_for_calc = [ts for ts in self._timestamps if ts >= cutoff_for_safe_doses]
             safe_doses = max(0, self._max_pills - len(valid_timestamps_for_calc))
 
-            # --- Determine the value for the _attr_native_value for the NextDose sensor ---
-            # Goal: Show the timestamp of the *last pill taken* for "X hours ago" display.
-            # This is based on the *full* history list (`self._timestamps`).
-            if self._timestamps: # If there's ANY history at all in the full history list
-                self._attr_native_value = self._timestamps[-1] # Use the most recent pill taken
+            if safe_doses == 0 and valid_timestamps_for_calc:
+                # Limit reached: show when the next dose becomes available (future)
+                self._attr_native_value = valid_timestamps_for_calc[0] + timedelta(hours=self._time_window)
+            elif self._timestamps:
+                # Doses available: show the last pill taken (past)
+                self._attr_native_value = self._timestamps[-1]
             else:
-                # No history at all.
                 self._attr_native_value = None
 
-            # --- Update the state attributes ---
-            # Save the *full* history of timestamps for restoration.
-            # The pruning for safe_doses calculation is temporary and handled by valid_timestamps_for_calc.
-            # The internal `self._timestamps` list itself is NOT pruned here and retains full history.
             self._attr_extra_state_attributes = {
-                "timestamps": [ts.isoformat() for ts in self._timestamps], # Save full history
-                "safe_doses_calculated": safe_doses # Save calculated safe_doses for context
+                "timestamps": [ts.isoformat() for ts in self._timestamps],
+                "safe_doses_calculated": safe_doses
             }
             
         if self._tracking_type != "As Needed":
