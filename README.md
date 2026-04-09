@@ -43,14 +43,15 @@ Once those are installed, add a "Manual" card to your dashboard and paste this c
 **💡 How to refill:** Double-click the "Inventory Left" box to open the refill dialog, enter the new box amount, and close it to instantly add to your inventory .
 
 ```yaml
-type: custom:vertical-stack-in-card
+# crtl + f and replace YOUR_MEDICATION with medication name chosen in lower case and with _ as spaces, eg: vitamin_d
 type: custom:vertical-stack-in-card
 cards:
   - type: custom:mushroom-template-card
-    entity: sensor.vitamin_d_next_dose
-    primary: Vitamin D
+    entity: sensor.YOUR_MEDICATION_next_dose
+# Change primary to a legable version
+    primary: YOUR_MEDICATION
     secondary: >-
-      {% set next = states('sensor.vitamin_d_next_dose') | as_datetime(None) %}
+      {% set next = states('sensor.YOUR_MEDICATION_next_dose') | as_datetime(None) %}
       {% if next == None or next <= now() %}
         Available now
       {% else %}
@@ -59,7 +60,6 @@ cards:
         {% set minutes = ((total_seconds % 3600) // 60) | int %}
         Wait: {% if hours > 0 %}{{ hours }} hours {% endif %}{{ minutes }} minutes
       {% endif %}
-    icon: none
     card_mod:
       style: |
         ha-card {
@@ -72,15 +72,16 @@ cards:
           - type: conditional
             conditions:
               - condition: numeric_state
-                entity: sensor.vitamin_d_safe_doses
+                entity: sensor.YOUR_MEDICATION_safe_doses
                 above: 0
-            card: &take_button
+            card:
               type: custom:mushroom-template-card
-              entity: button.vitamin_d_take_vitamin_d
+              entity: button.YOUR_MEDICATION_take_YOUR_MEDICATION
               primary: Take Pill
               secondary: >-
-                {% set ts = state_attr('sensor.vitamin_d_safe_doses', 'timestamps') %}
-                {{ relative_time(ts | last | as_datetime) if ts else 'Never' }} ago
+                {% set ts = state_attr('sensor.YOUR_MEDICATION_safe_doses',
+                'timestamps') %} {{ relative_time(ts | last | as_datetime) if ts
+                else 'Never' }} ago
               icon: mdi:pill
               icon_color: blue
               layout: vertical
@@ -88,7 +89,7 @@ cards:
                 action: call-service
                 service: button.press
                 target:
-                  entity_id: button.vitamin_d_take_vitamin_d
+                  entity_id: button.YOUR_MEDICATION_take_YOUR_MEDICATION
               card_mod:
                 style: |
                   ha-card {
@@ -115,21 +116,60 @@ cards:
           - type: conditional
             conditions:
               - condition: state
-                entity: sensor.vitamin_d_safe_doses
+                entity: sensor.YOUR_MEDICATION_safe_doses
                 state: unknown
-            card: *take_button
+            card:
+              type: custom:mushroom-template-card
+              entity: button.YOUR_MEDICATION_take_YOUR_MEDICATION
+              primary: Take Pill
+              secondary: >-
+                {% set ts = state_attr('sensor.YOUR_MEDICATION_safe_doses',
+                'timestamps') %} {{ relative_time(ts | last | as_datetime) if ts
+                else 'Never' }} ago
+              icon: mdi:pill
+              icon_color: blue
+              layout: vertical
+              tap_action:
+                action: call-service
+                service: button.press
+                target:
+                  entity_id: button.YOUR_MEDICATION_take_YOUR_MEDICATION
+              card_mod:
+                style: |
+                  ha-card {
+                    height: 120px !important;
+                    display: flex;
+                  }
+                  ha-card:hover {
+                    background: rgba(var(--rgb-blue), 0.1);
+                    transition: background 0.2s ease;
+                  }
+                  ha-card:active {
+                    transform: scale(0.95);
+                    animation: pulse 0.3s ease;
+                  }
+                  mushroom-shape-icon {
+                    --icon-main-color: var(--rgb-blue) !important;
+                    --icon-size: 40px !important;
+                  }
+                  @keyframes pulse {
+                    0% { box-shadow: 0 0 0 0 rgba(var(--rgb-blue), 0.7); }
+                    70% { box-shadow: 0 0 0 10px rgba(var(--rgb-blue), 0); }
+                    100% { box-shadow: 0 0 0 0 rgba(var(--rgb-blue), 0); }
+                  }
           - type: conditional
             conditions:
               - condition: numeric_state
-                entity: sensor.vitamin_d_safe_doses
+                entity: sensor.YOUR_MEDICATION_safe_doses
                 below: 1
             card:
               type: custom:mushroom-template-card
-              entity: button.vitamin_d_take_vitamin_d
+              entity: button.YOUR_MEDICATION_take_YOUR_MEDICATION
               primary: LIMIT REACHED
               secondary: >-
-                {% set ts = state_attr('sensor.vitamin_d_safe_doses', 'timestamps') %}
-                {{ relative_time(ts | last | as_datetime) if ts else 'Never' }} ago
+                {% set ts = state_attr('sensor.YOUR_MEDICATION_safe_doses',
+                'timestamps') %} {{ relative_time(ts | last | as_datetime) if ts
+                else 'Never' }} ago
               icon: mdi:alert
               icon_color: red
               layout: vertical
@@ -137,7 +177,7 @@ cards:
                 action: call-service
                 service: button.press
                 target:
-                  entity_id: button.vitamin_d_take_vitamin_d
+                  entity_id: button.YOUR_MEDICATION_take_YOUR_MEDICATION
                 confirmation:
                   text: "WARNING: 0 safe doses available. Override?"
               card_mod:
@@ -164,30 +204,41 @@ cards:
       - type: vertical-stack
         cards:
           - type: custom:mushroom-template-card
-            entity: sensor.vitamin_d_safe_doses
+            entity: sensor.YOUR_MEDICATION_safe_doses
             primary: Can take
-            secondary: "{{ states('sensor.vitamin_d_safe_doses') }}"
+            secondary: "{{ states('sensor.YOUR_MEDICATION_safe_doses') }}"
             icon: mdi:pill
             icon_color: blue
             tap_action:
               action: none
           - type: custom:mushroom-template-card
-            entity: number.vitamin_d_pills_left
+            entity: number.YOUR_MEDICATION_pills_left
             primary: Left
-            secondary: "{{ states('number.vitamin_d_pills_left') }}"
+            secondary: "{{ states('number.YOUR_MEDICATION_pills_left') }}"
             icon: mdi:pill
             icon_color: blue
             tap_action:
               action: none
             double_tap_action:
               action: more-info
-              entity: number.vitamin_d_add_vitamin_d_refill
+              entity: number.YOUR_MEDICATION_add_YOUR_MEDICATION_refill
             card_mod:
               style: |
                 ha-card:hover {
                   cursor: pointer;
                   background: rgba(var(--rgb-blue), 0.05);
                 }
+# Delete if not needed
+    chips:
+      - type: template
+        content: "7d Avg: {{ states('sensor.YOUR_MEDICATION_avg_daily_doses_7_days') }}"
+        icon: mdi:chart-line
+      - type: template
+        content: "30d Avg: {{ states('sensor.YOUR_MEDICATION_avg_daily_doses_30_days') }}"
+        icon: mdi:chart-line
+      - type: template
+        content: "Year Avg: {{ states('sensor.YOUR_MEDICATION_avg_daily_doses_yearly') }}"
+        icon: mdi:chart-line
 ```
 
 ---
