@@ -235,7 +235,7 @@ cards:
               action: none
             double_tap_action:
               action: more-info
-              entity: number.add_YOUR_MEDICATION_refill
+              entity: number.YOUR_MEDICATION_add_YOUR_MEDICATION_refill
             card_mod:
               style: |
                 ha-card:hover {
