@@ -275,15 +275,28 @@ class PillNextDoseSensor(RestoreSensor):
                     self._attr_native_value = target_today
         elif self._tracking_type == "As Needed":
             cutoff = now - timedelta(hours=self._time_window)
-            self._timestamps = [ts for ts in self._timestamps if ts >= cutoff]
-            safe_doses = max(0, self._max_pills - len(self._timestamps))  
+            
+            # Use a temporary list to calculate safe doses so we don't prematurely delete history
+            valid_timestamps = [ts for ts in self._timestamps if ts >= cutoff]
+            safe_doses = max(0, self._max_pills - len(valid_timestamps))
+
             if safe_doses > 0:
-                self._attr_native_value = None
-            else:
+                # Output the time of the last taken pill instead of None
                 if self._timestamps:
-                    self._attr_native_value = self._timestamps[0] + timedelta(hours=self._time_window)
-                else:
-                    self._attr_native_value = None  
+                    self._attr_native_value = self._timestamps[-1]
+            else:
+                if valid_timestamps:
+                    self._attr_native_value = valid_timestamps[0] + timedelta(hours=self._time_window)
+
+            # Safely update the main array, but ALWAYS append the last known timestamp 
+            # so the user can see 'xx hours ago' in the UI.
+            if self._timestamps:
+                last_ts = self._timestamps[-1]
+                self._timestamps = valid_timestamps
+                if last_ts not in self._timestamps:
+                    self._timestamps.append(last_ts)
+            else:
+                self._timestamps = valid_timestamps
         self._attr_extra_state_attributes = {
             "timestamps": [ts.isoformat() for ts in self._timestamps]
         }  
