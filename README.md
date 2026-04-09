@@ -59,7 +59,6 @@ cards:
         {% set minutes = ((total_seconds % 3600) // 60) | int %}
         Wait: {% if hours > 0 %}{{ hours }} hours {% endif %}{{ minutes }} minutes
       {% endif %}
-    icon: mdi:pill
     icon_color: blue
     badge_icon: >-
       {% set safe = states('sensor.YOUR_MEDICATION_safe_doses') %}
