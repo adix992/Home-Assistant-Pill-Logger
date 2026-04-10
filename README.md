@@ -43,14 +43,10 @@ Once those are installed, add a "Manual" card to your dashboard and paste this c
 **💡 How to refill:** Double-click the "Inventory Left" box to open the refill dialog, enter the new box amount, and close it to instantly add to your inventory .
 
 ```yaml
-# crtl + f and replace YOUR_MEDICATION with medication name chosen in lower case and with _ as spaces, eg: vitamin_d
-type: custom:vertical-stack-in-card
-# crtl + f and replace YOUR_MEDICATION with medication name chosen in lower case and with _as spaces, eg: vitamin_d
 type: custom:vertical-stack-in-card
 cards:
   - type: custom:mushroom-template-card
     entity: sensor.YOUR_MEDICATION_next_dose
-    # Change primary to a legable version
     primary: YOUR_MEDICATION
     secondary: >-
       {% set next = states('sensor.YOUR_MEDICATION_next_dose') | as_datetime(None) %}
@@ -78,9 +74,8 @@ cards:
                 above: 0
             card:
               type: custom:mushroom-template-card
-              entity: button.YOUR_MEDICATION_take_YOUR_MEDICATION
               primary: Take Pill
-              secondary: >-
+              secondary: |-
                 {% if states('sensor.YOUR_MEDICATION_total_doses') | int(0) > 0 %}
                   {{ relative_time(states.sensor.YOUR_MEDICATION_total_doses.last_changed) }} ago
                 {% else %}
@@ -99,7 +94,7 @@ cards:
                   ha-card {
                     height: 120px !important;
                     display: flex;
-                  }
+                    }
                   ha-card:hover {
                     background: rgba(var(--rgb-blue), 0.1);
                     transition: background 0.2s ease;
@@ -107,10 +102,6 @@ cards:
                   ha-card:active {
                     transform: scale(0.95);
                     animation: pulse 0.3s ease;
-                  }
-                  mushroom-shape-icon {
-                    --icon-main-color: var(--rgb-blue) !important;
-                    --icon-size: 40px !important;
                   }
                   @keyframes pulse {
                     0% { box-shadow: 0 0 0 0 rgba(var(--rgb-blue), 0.7); }
@@ -124,9 +115,8 @@ cards:
                 state: unknown
             card:
               type: custom:mushroom-template-card
-              entity: button.YOUR_MEDICATION_take_YOUR_MEDICATION
               primary: Take Pill
-              secondary: >-
+              secondary: |-
                 {% if states('sensor.YOUR_MEDICATION_total_doses') | int(0) > 0 %}
                   {{ relative_time(states.sensor.YOUR_MEDICATION_total_doses.last_changed) }} ago
                 {% else %}
@@ -154,10 +144,6 @@ cards:
                     transform: scale(0.95);
                     animation: pulse 0.3s ease;
                   }
-                  mushroom-shape-icon {
-                    --icon-main-color: var(--rgb-blue) !important;
-                    --icon-size: 40px !important;
-                  }
                   @keyframes pulse {
                     0% { box-shadow: 0 0 0 0 rgba(var(--rgb-blue), 0.7); }
                     70% { box-shadow: 0 0 0 10px rgba(var(--rgb-blue), 0); }
@@ -170,9 +156,8 @@ cards:
                 below: 1
             card:
               type: custom:mushroom-template-card
-              entity: button.YOUR_MEDICATION_take_YOUR_MEDICATION
               primary: LIMIT REACHED
-              secondary: >-
+              secondary: |-
                 {% if states('sensor.YOUR_MEDICATION_total_doses') | int(0) > 0 %}
                   {{ relative_time(states.sensor.YOUR_MEDICATION_total_doses.last_changed) }} ago
                 {% else %}
@@ -194,18 +179,12 @@ cards:
                     height: 120px !important;
                     display: flex;
                   }
-                  mushroom-shape-icon {
-                    pointer-events: none;
-                  }
                   ha-card:hover {
                     background: rgba(var(--rgb-red), 0.1);
                   }
                   ha-card:active {
                     transform: scale(0.95);
                     animation: pulse-red 0.3s ease;
-                  }
-                  mushroom-shape-icon {
-                    --icon-size: 40px !important;
                   }
                   @keyframes pulse-red {
                     0% { box-shadow: 0 0 0 0 rgba(var(--rgb-red), 0.7); }
@@ -239,19 +218,6 @@ cards:
                   cursor: pointer;
                   background: rgba(var(--rgb-blue), 0.05);
                 }
-  # Delete if not needed
-  - type: custom:mushroom-chips-card
-    alignment: center
-    chips:
-      - type: template
-        content: "7d Avg: {{ states('sensor.YOUR_MEDICATION_avg_daily_doses_7_days') }}"
-        icon: mdi:chart-line
-      - type: template
-        content: "30d Avg: {{ states('sensor.YOUR_MEDICATION_avg_daily_doses_30_days') }}"
-        icon: mdi:chart-line
-      - type: template
-        content: "Year Avg: {{ states('sensor.YOUR_MEDICATION_avg_daily_doses_yearly') }}"
-        icon: mdi:chart-line
 ```
 
 ---
