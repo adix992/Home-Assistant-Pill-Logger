@@ -45,10 +45,12 @@ Once those are installed, add a "Manual" card to your dashboard and paste this c
 ```yaml
 # crtl + f and replace YOUR_MEDICATION with medication name chosen in lower case and with _ as spaces, eg: vitamin_d
 type: custom:vertical-stack-in-card
+# crtl + f and replace YOUR_MEDICATION with medication name chosen in lower case and with _as spaces, eg: vitamin_d
+type: custom:vertical-stack-in-card
 cards:
   - type: custom:mushroom-template-card
     entity: sensor.YOUR_MEDICATION_next_dose
-# Change primary to a legable version
+    # Change primary to a legable version
     primary: YOUR_MEDICATION
     secondary: >-
       {% set next = states('sensor.YOUR_MEDICATION_next_dose') | as_datetime(None) %}
@@ -79,9 +81,11 @@ cards:
               entity: button.YOUR_MEDICATION_take_YOUR_MEDICATION
               primary: Take Pill
               secondary: >-
-                {% set ts = state_attr('sensor.YOUR_MEDICATION_safe_doses',
-                'timestamps') %} {{ relative_time(ts | last | as_datetime) if ts
-                else 'Never' }} ago
+                {% if states('sensor.YOUR_MEDICATION_total_doses') | int(0) > 0 %}
+                  {{ relative_time(states.sensor.YOUR_MEDICATION_total_doses.last_changed) }} ago
+                {% else %}
+                  Never ago
+                {% endif %}
               icon: mdi:pill
               icon_color: blue
               layout: vertical
@@ -123,9 +127,11 @@ cards:
               entity: button.YOUR_MEDICATION_take_YOUR_MEDICATION
               primary: Take Pill
               secondary: >-
-                {% set ts = state_attr('sensor.YOUR_MEDICATION_safe_doses',
-                'timestamps') %} {{ relative_time(ts | last | as_datetime) if ts
-                else 'Never' }} ago
+                {% if states('sensor.YOUR_MEDICATION_total_doses') | int(0) > 0 %}
+                  {{ relative_time(states.sensor.YOUR_MEDICATION_total_doses.last_changed) }} ago
+                {% else %}
+                  Never ago
+                {% endif %}
               icon: mdi:pill
               icon_color: blue
               layout: vertical
@@ -167,9 +173,11 @@ cards:
               entity: button.YOUR_MEDICATION_take_YOUR_MEDICATION
               primary: LIMIT REACHED
               secondary: >-
-                {% set ts = state_attr('sensor.YOUR_MEDICATION_safe_doses',
-                'timestamps') %} {{ relative_time(ts | last | as_datetime) if ts
-                else 'Never' }} ago
+                {% if states('sensor.YOUR_MEDICATION_total_doses') | int(0) > 0 %}
+                  {{ relative_time(states.sensor.YOUR_MEDICATION_total_doses.last_changed) }} ago
+                {% else %}
+                  Never ago
+                {% endif %}
               icon: mdi:alert
               icon_color: red
               layout: vertical
@@ -185,6 +193,9 @@ cards:
                   ha-card {
                     height: 120px !important;
                     display: flex;
+                  }
+                  mushroom-shape-icon {
+                    pointer-events: none;
                   }
                   ha-card:hover {
                     background: rgba(var(--rgb-red), 0.1);
@@ -228,7 +239,9 @@ cards:
                   cursor: pointer;
                   background: rgba(var(--rgb-blue), 0.05);
                 }
-# Delete if not needed
+  # Delete if not needed
+  - type: custom:mushroom-chips-card
+    alignment: center
     chips:
       - type: template
         content: "7d Avg: {{ states('sensor.YOUR_MEDICATION_avg_daily_doses_7_days') }}"
