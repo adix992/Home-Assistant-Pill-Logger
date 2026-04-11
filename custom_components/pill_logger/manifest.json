@@ -6,5 +6,5 @@
   ],
   "config_flow": true,
   "documentation": "https://github.com/adix992/Home-Assistant-Pill-Logger",
-  "version": "1.1.3"
+  "version": "1.1.5"
 }
