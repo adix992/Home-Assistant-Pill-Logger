@@ -76,8 +76,9 @@ cards:
               type: custom:mushroom-template-card
               primary: Take Pill
               secondary: |-
-                {% if states('sensor.YOUR_MEDICATION_total_doses') | int(0) > 0 %}
-                  {{ relative_time(states.sensor.YOUR_MEDICATION_total_doses.last_changed) }} ago
+                {% set last_dose = states('sensor.YOUR_MEDICATION_last_dose') %}
+                {% if last_dose not in ['unknown', 'unavailable', 'None', ''] %}
+                  {{ relative_time(as_datetime(last_dose)) }} ago
                 {% else %}
                   Never ago
                 {% endif %}
@@ -94,6 +95,7 @@ cards:
                   ha-card {
                     height: 120px !important;
                     display: flex;
+                  }
                   ha-card:hover {
                     background: rgba(var(--rgb-blue), 0.1);
                     transition: background 0.2s ease;
@@ -116,8 +118,9 @@ cards:
               type: custom:mushroom-template-card
               primary: Take Pill
               secondary: |-
-                {% if states('sensor.YOUR_MEDICATION_total_doses') | int(0) > 0 %}
-                  {{ relative_time(states.sensor.YOUR_MEDICATION_total_doses.last_changed) }} ago
+                {% set last_dose = states('sensor.YOUR_MEDICATION_last_dose') %}
+                {% if last_dose not in ['unknown', 'unavailable', 'None', ''] %}
+                  {{ relative_time(as_datetime(last_dose)) }} ago
                 {% else %}
                   Never ago
                 {% endif %}
@@ -161,8 +164,9 @@ cards:
               type: custom:mushroom-template-card
               primary: LIMIT REACHED
               secondary: |-
-                {% if states('sensor.YOUR_MEDICATION_total_doses') | int(0) > 0 %}
-                  {{ relative_time(states.sensor.YOUR_MEDICATION_total_doses.last_changed) }} ago
+                {% set last_dose = states('sensor.YOUR_MEDICATION_last_dose') %}
+                {% if last_dose not in ['unknown', 'unavailable', 'None', ''] %}
+                  {{ relative_time(as_datetime(last_dose)) }} ago
                 {% else %}
                   Never ago
                 {% endif %}
@@ -182,12 +186,10 @@ cards:
                     height: 120px !important;
                     display: flex;
                   }
-                  
                   /* 1. Hide the native cropped icon entirely */
                   ha-state-icon {
                     display: none !important;
                   }
-                  
                   /* 2. Draw a massive replacement icon AND circle using an un-croppable SVG overlay */
                   ha-card::after {
                     content: "";
@@ -195,38 +197,30 @@ cards:
                     top: 0px; /* Adjust up/down to center in your layout */
                     left: 50%;
                     transform: translateX(-50%);
-                    
                     /* Size of the Background Circle */
-                    width: 70px; 
+                    width: 70px;
                     height: 70px;
-                    
                     /* Inject the MDI Alert Icon (Material Red) */
                     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23F44336' d='M13 14H11V9H13M13 18H11V16H13M1 21H23L12 2L1 21Z'/%3E%3C/svg%3E");
                     background-repeat: no-repeat;
                     background-position: center;
-                    
                     /* Size of the Warning Icon */
-                    background-size: 50px 50px; 
-                    
+                    background-size: 50px 50px;
                     /* CRITICAL: Allows your mouse clicks to pass through to the button */
-                    pointer-events: none; 
+                    pointer-events: none;
                   }
-
                   ha-card:hover {
                     background: rgba(var(--rgb-red), 0.1);
                   }
-
                   ha-card:active {
                     transform: scale(0.95);
                     animation: pulse-red 0.3s ease;
                   }
-
                   mushroom-shape-icon {
                     --icon-size: 60px !important;
                     --shape-color: rgba(var(--rgb-red), 0.2) !important;
                     --shape-outline-color: rgba(var(--rgb-red), 0.5) !important;
                   }
-
                   @keyframes pulse-red {
                     0% { box-shadow: 0 0 0 0 rgba(var(--rgb-red), 0.7); }
                     70% { box-shadow: 0 0 0 10px rgba(var(--rgb-red), 0); }
@@ -271,7 +265,6 @@ cards:
       - type: template
         content: "Year Avg: {{ states('sensor.YOUR_MEDICATION_avg_daily_doses_yearly') }}"
         icon: mdi:chart-line
-
 ```
 
 ---
