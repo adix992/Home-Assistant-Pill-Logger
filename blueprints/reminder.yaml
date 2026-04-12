@@ -76,6 +76,14 @@ action:
             - conditions: "{{ true }}"
               sequence: !input optional_action
 
+        # 1.5 Clear the old notification so the new one triggers a sound
+        - device_id: !input notify_device
+          domain: mobile_app
+          type: notify
+          message: "clear_notification"
+          data:
+            tag: "{{ tag_id }}"
+
         # 2. Send the Mobile Notification
         - device_id: !input notify_device
           domain: mobile_app
@@ -135,6 +143,4 @@ action:
                 - stop: "User skipped."
           
           # If no response, wait the snooze time and loop again
-          default:
-            - delay:
-                minutes: !input snooze_time
+          default: []
