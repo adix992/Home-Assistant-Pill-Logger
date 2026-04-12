@@ -49,6 +49,7 @@ blueprint:
 
 variables:
   # Create unique action IDs so multiple pill alarms don't cross-talk
+  next_dose_sensor: !input next_dose_sensor
   btn_entity: !input take_button
   action_take: "TAKE_{{ btn_entity }}"
   action_snooze: "SNOOZE_{{ btn_entity }}"
