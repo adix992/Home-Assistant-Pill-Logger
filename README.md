@@ -78,7 +78,10 @@ cards:
               secondary: |-
                 {% set last_dose = states('sensor.YOUR_MEDICATION_last_dose') %}
                 {% if last_dose not in ['unknown', 'unavailable', 'None', ''] %}
-                  {{ relative_time(as_datetime(last_dose)) }} ago
+                  {% set total_seconds = (now() - as_datetime(last_dose)).total_seconds() %}
+                  {% set hours = (total_seconds // 3600) | int %}
+                  {% set minutes = ((total_seconds % 3600) // 60) | int %}
+                  {% if hours > 0 %}{{ hours }} hours {% endif %}{{ minutes }} minutes ago
                 {% else %}
                   Never ago
                 {% endif %}
@@ -120,7 +123,10 @@ cards:
               secondary: |-
                 {% set last_dose = states('sensor.YOUR_MEDICATION_last_dose') %}
                 {% if last_dose not in ['unknown', 'unavailable', 'None', ''] %}
-                  {{ relative_time(as_datetime(last_dose)) }} ago
+                  {% set total_seconds = (now() - as_datetime(last_dose)).total_seconds() %}
+                  {% set hours = (total_seconds // 3600) | int %}
+                  {% set minutes = ((total_seconds % 3600) // 60) | int %}
+                  {% if hours > 0 %}{{ hours }} hours {% endif %}{{ minutes }} minutes ago
                 {% else %}
                   Never ago
                 {% endif %}
@@ -166,7 +172,10 @@ cards:
               secondary: |-
                 {% set last_dose = states('sensor.YOUR_MEDICATION_last_dose') %}
                 {% if last_dose not in ['unknown', 'unavailable', 'None', ''] %}
-                  {{ relative_time(as_datetime(last_dose)) }} ago
+                  {% set total_seconds = (now() - as_datetime(last_dose)).total_seconds() %}
+                  {% set hours = (total_seconds // 3600) | int %}
+                  {% set minutes = ((total_seconds % 3600) // 60) | int %}
+                  {% if hours > 0 %}{{ hours }} hours {% endif %}{{ minutes }} minutes ago
                 {% else %}
                   Never ago
                 {% endif %}
